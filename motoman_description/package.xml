@@ -3,7 +3,7 @@
 <package format="3">
   <name>motoman_description</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>motoman_description contains URDF files and meshes for Yaskawa Motoman</description>
   <maintainer email="you@example.com">ros</maintainer>
   <license>MIT</license>
 
@@ -13,6 +13,8 @@
   <test_depend>ament_lint_common</test_depend>
 
   <exec_depend>xacro</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+  <!-- <exec_depend>joint_state_publisher_gui</exec_depend> -->
 
   <export>
     <build_type>ament_cmake</build_type>

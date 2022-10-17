@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='utf-8'?>
+<robot name="motoman_hc10" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:arg name="arm_id" default=""/> <!-- Name of this robot, not used yet -->
+  <xacro:arg name="robot_ip" default=""/> <!-- IP address or hostname of the robot" -->
+  
+  <xacro:include filename="$(find motoman_description)/robots/hc10_macro.xacro" />
+  <xacro:motoman_hc10 prefix=""/>
+
+  <xacro:include filename="$(find motoman_description)/robots/ros2_control.xacro"/>
+  <xacro:motoman_ros2_control ns="$(arg arm_id)" robot_ip="$(arg robot_ip)"/>
+
+
+</robot>

@@ -1,0 +1,55 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 250 # Hz
+
+    # new
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    # # old
+    # joint_state_controller:
+    #   type: joint_state_controller/JointStateController
+
+    forward_command_controller_velocity:
+      type: forward_command_controller/ForwardCommandController
+
+    # # not ready yet
+    # joint_trajectory_controller:
+    #   type: joint_effort_trajectory_controller/JointTrajectoryController
+
+forward_command_controller_velocity:
+  ros__parameters:
+    joints:
+      - joint_1_s
+      - joint_2_l
+      - joint_3_u
+      - joint_4_r
+      - joint_5_b
+      - joint_6_t
+    interface_name: velocity
+
+# joint_trajectory_controller:
+#   ros__parameters:
+#     joints:
+#       - joint_1_s
+#       - joint_2_l
+#       - joint_3_u
+#       - joint_4_r
+#       - joint_5_b
+#       - joint_6_t
+#     command_interfaces:
+#       - velocity
+#     state_interfaces:
+#       - position
+#       - velocity
+#     gains:
+#       joint_1_s: { p: 600., d: 30., i: 0., i_clamp: 1. }
+#       joint_2_l: { p: 600., d: 30., i: 0., i_clamp: 1. }
+#       joint_3_u: { p: 600., d: 30., i: 0., i_clamp: 1. }
+#       joint_4_r: { p: 600., d: 30., i: 0., i_clamp: 1. }
+#       joint_5_b: { p: 250., d: 10., i: 0., i_clamp: 1. }
+#       joint_6_t: { p: 150., d: 10., i: 0., i_clamp: 1. }
+
+
+
+
