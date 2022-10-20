@@ -15,9 +15,16 @@
 #ifndef MOTOMAN_HARDWARE__SIMPLE_MESSAGE_HPP_
 #define MOTOMAN_HARDWARE__SIMPLE_MESSAGE_HPP_
 
+// PORTS
+#define TCP_PORT_MOTION						50240
+#define TCP_PORT_STATE						50241
+#define TCP_PORT_IO							  50242
+#define TCP_PORT_REALTIME_MOTION	50243
+#define UDP_PORT_REALTIME_MOTION  50244
+
 namespace motoman_hardware::simple_message
 {
-#pragma pack(push, 1)
+#pragma pack(push, 1) // prevent data structure padding
 
 constexpr int ROS_MAX_JOINT = 10;
 constexpr int MOT_MAX_GR = 4;
@@ -29,6 +36,9 @@ struct Prefix
 
 enum class MsgType
 {
+  ROS_MSG_MOTO_MOTION_CTRL = 2001,
+  ROS_MSG_MOTO_MOTION_REPLY = 2002,
+
   MOTO_REALTIME_MOTION_JOINT_STATE_EX = 2030,
   MOTO_REALTIME_MOTION_JOINT_COMMAND_EX = 2031
 };
@@ -54,6 +64,31 @@ struct Header
   CommType comm_type;
   ReplyType reply_type;
 };
+
+enum class SmCommandType
+{
+	ROS_CMD_CHECK_MOTION_READY = 200101,
+	ROS_CMD_CHECK_QUEUE_CNT = 200102,
+	ROS_CMD_STOP_MOTION = 200111,
+	ROS_CMD_START_SERVOS = 200112, // starts the servo motors
+	ROS_CMD_STOP_SERVOS = 200113, // stops the servo motors and motion
+	ROS_CMD_RESET_ALARM = 200114, // clears the error in the current controller
+	ROS_CMD_START_TRAJ_MODE = 200121, // Enable robot motion
+	ROS_CMD_STOP_TRAJ_MODE = 200122, // Disable robot motion
+	ROS_CMD_DISCONNECT = 200130,
+	ROS_CMD_START_RT_MODE = 200140, // Start real-time mode
+	ROS_CMD_STOP_RT_MODE = 200141, // Stop real-time mode
+	ROS_CMD_CHECK_TIMEOUT_CNT = 200142, // Check the number of late packages in RT mode
+};
+
+struct SmBodyMotoMotionCtrl	// ROS_MSG_MOTO_MOTION_CTRL = 2001
+{
+	int groupNo;  			        // Robot/group ID;  0 = 1st robot 
+	int sequence;				        // Optional message tracking number that will be echoed back in the response.
+	SmCommandType command;		  // Desired command
+	float data[ROS_MAX_JOINT];	// Command data - for future use  
+};
+
 
 enum class MotoRealTimeMotionMode
 {
@@ -92,6 +127,8 @@ struct MotoRealTimeMotionJointCommandEx
 
 union Body
 {
+  SmBodyMotoMotionCtrl motionCtrl;
+
   MotoRealTimeMotionJointStateEx joint_state_ex;
   MotoRealTimeMotionJointCommandEx joint_command_ex;
 };

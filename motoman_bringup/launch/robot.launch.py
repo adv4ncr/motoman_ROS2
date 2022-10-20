@@ -77,19 +77,19 @@ def generate_launch_description():
             output='screen',
             parameters=[{'robot_description': robot_description}],
         ),
-        Node(
-            package='joint_state_publisher',
-            executable='joint_state_publisher',
-            name='joint_state_publisher',
-            parameters=[
-                {'source_list': ['motoman/joint_states'],#'gripper/joint_states'],
-                 'rate': 30}],
-        ),
+        # Node(
+        #     package='joint_state_publisher',
+        #     executable='joint_state_publisher',
+        #     name='joint_state_publisher',
+        #     parameters=[
+        #         {'source_list': ['motoman/joint_states'],#'gripper/joint_states'],
+        #          'rate': 30}],
+        # ),
         Node(
             package='controller_manager',
             executable='ros2_control_node',
             parameters=[{'robot_description': robot_description}, motoman_controllers],
-            remappings=[('joint_states', 'motoman/joint_states')],
+            #remappings=[('joint_states', 'motoman/joint_states')],
             output="screen",
             on_exit=Shutdown(),
         ),

@@ -56,22 +56,23 @@ public:
 
 private:
 
+    //void send_tcp_motion_request();
+
     std::vector<double> hw_commands_;
     std::vector<double> hw_positions_;
     std::vector<double> hw_velocities_;
+    size_t joints_size;
 
     // simple messages
     simple_message::SimpleMessage state_msg_;
     simple_message::SimpleMessage command_msg_;
 
-    struct sockaddr_in udp_servaddr;
-    std::string udp_ip_address;
-    uint16_t udp_port;
-    int udp_socket_fd;
+    struct sockaddr_in udp_servaddr, tcp_servaddr;
+    std::string ip_address;
+    int udp_socket_fd, tcp_socket_fd;
 
-    ssize_t bytesReceived;
     unsigned int sizeof_udp_servaddr;
- 
+    ssize_t bytesSend, bytesRecv;
 
 };
 
