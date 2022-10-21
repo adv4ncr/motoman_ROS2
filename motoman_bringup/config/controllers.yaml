@@ -10,14 +10,14 @@ controller_manager:
     # joint_state_controller:
     #   type: joint_state_controller/JointStateController
 
-    forward_command_controller_velocity:
+    forward_command_controller_position:
       type: forward_command_controller/ForwardCommandController
 
     # # not ready yet
     # joint_trajectory_controller:
     #   type: joint_effort_trajectory_controller/JointTrajectoryController
 
-forward_command_controller_velocity:
+forward_command_controller_position:
   ros__parameters:
     joints:
       - joint_1_s
@@ -26,7 +26,7 @@ forward_command_controller_velocity:
       - joint_4_r
       - joint_5_b
       - joint_6_t
-    interface_name: velocity
+    interface_name: position
 
 # joint_trajectory_controller:
 #   ros__parameters:

@@ -19,7 +19,7 @@
 #define TCP_PORT_MOTION						50240
 #define TCP_PORT_STATE						50241
 #define TCP_PORT_IO							  50242
-#define TCP_PORT_REALTIME_MOTION	50243
+#define TCP_PORT_MOTION_COMMAND   50243
 #define UDP_PORT_REALTIME_MOTION  50244
 
 namespace motoman_hardware::simple_message
@@ -89,6 +89,28 @@ struct SmBodyMotoMotionCtrl	// ROS_MSG_MOTO_MOTION_CTRL = 2001
 	float data[ROS_MAX_JOINT];	// Command data - for future use  
 };
 
+typedef enum
+{
+	ROS_RESULT_SUCCESS = 0,
+	ROS_RESULT_TRUE = 0,
+	ROS_RESULT_BUSY = 1,
+	ROS_RESULT_FAILURE = 2,
+	ROS_RESULT_FALSE = 2,
+	ROS_RESULT_INVALID = 3,
+	ROS_RESULT_ALARM = 4,
+	ROS_RESULT_NOT_READY = 5,
+	ROS_RESULT_MP_FAILURE = 6
+} SmResultType;
+
+struct SmBodyMotoMotionReply	// ROS_MSG_MOTO_MOTION_REPLY = 2002
+{
+	int groupNo;  				      // Robot/group ID;  0 = 1st robot 
+	int sequence;				        // Optional message tracking number that will be echoed back in the response.
+	int command;				        // Reference to the received message command or type
+	SmResultType result;		    // High level result code
+	int subcode;				        // More detailed result code (optional)
+	float data[ROS_MAX_JOINT];	// Reply data - for future use 
+};
 
 enum class MotoRealTimeMotionMode
 {
@@ -128,6 +150,7 @@ struct MotoRealTimeMotionJointCommandEx
 union Body
 {
   SmBodyMotoMotionCtrl motionCtrl;
+  SmBodyMotoMotionReply motionReply;
 
   MotoRealTimeMotionJointStateEx joint_state_ex;
   MotoRealTimeMotionJointCommandEx joint_command_ex;

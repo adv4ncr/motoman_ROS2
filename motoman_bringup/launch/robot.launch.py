@@ -13,19 +13,17 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+from launch.actions import RegisterEventHandler
+from launch.event_handlers import OnProcessExit
 
 
 def generate_launch_description():
     robot_ip_parameter_name = 'robot_ip'
     load_gripper_parameter_name = 'load_gripper'
-    # use_fake_hardware_parameter_name = 'use_fake_hardware'
-    # fake_sensor_commands_parameter_name = 'fake_sensor_commands'
     use_rviz_parameter_name = 'use_rviz'
 
     robot_ip = LaunchConfiguration(robot_ip_parameter_name)
     load_gripper = LaunchConfiguration(load_gripper_parameter_name)
-    # use_fake_hardware = LaunchConfiguration(use_fake_hardware_parameter_name)
-    # fake_sensor_commands = LaunchConfiguration(fake_sensor_commands_parameter_name)
     use_rviz = LaunchConfiguration(use_rviz_parameter_name)
 
     # HC10 hardcoded #TODO
@@ -48,72 +46,88 @@ def generate_launch_description():
         ]
     )
 
-    return LaunchDescription([
-        DeclareLaunchArgument(
-            robot_ip_parameter_name,
-            description='Hostname or IP address of the robot.'),
-        DeclareLaunchArgument(
-            use_rviz_parameter_name,
-            default_value='false',
-            description='Visualize the robot in Rviz'),
-        # DeclareLaunchArgument(
-        #     use_fake_hardware_parameter_name,
-        #     default_value='false',
-        #     description='Use fake hardware'),
-        # DeclareLaunchArgument(
-        #     fake_sensor_commands_parameter_name,
-        #     default_value='false',
-        #     description="Fake sensor commands. Only valid when '{}' is true".format(
-        #         use_fake_hardware_parameter_name)),
-        DeclareLaunchArgument(
-            load_gripper_parameter_name,
-            default_value='false',
-            description='Use Gripper as an end-effector, otherwise, the robot is loaded '
-                        'without an end-effector.'),
-        Node(
-            package='robot_state_publisher',
-            executable='robot_state_publisher',
-            name='robot_state_publisher',
-            output='screen',
-            parameters=[{'robot_description': robot_description}],
-        ),
-        # Node(
-        #     package='joint_state_publisher',
-        #     executable='joint_state_publisher',
-        #     name='joint_state_publisher',
-        #     parameters=[
-        #         {'source_list': ['motoman/joint_states'],#'gripper/joint_states'],
-        #          'rate': 30}],
-        # ),
-        Node(
-            package='controller_manager',
-            executable='ros2_control_node',
-            parameters=[{'robot_description': robot_description}, motoman_controllers],
-            #remappings=[('joint_states', 'motoman/joint_states')],
-            output="screen",
-            on_exit=Shutdown(),
-        ),
-        Node(
-            package='controller_manager',
-            executable='spawner',
-            arguments=['joint_state_broadcaster'],
-            output='screen',
-        ),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([PathJoinSubstitution(
-                [FindPackageShare('motoman_gripper'), 'launch', 'gripper.launch.py'])]),
-            launch_arguments={robot_ip_parameter_name: robot_ip,
-                              #use_fake_hardware_parameter_name: use_fake_hardware
-                              }.items(),
-            condition=IfCondition(load_gripper)
+    robot_state_pub_node = Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        name='robot_state_publisher',
+        output='screen',
+        parameters=[{'robot_description': robot_description}],
+    )
 
-        ),
+    controller_node = Node(
+        package='controller_manager',
+        executable='ros2_control_node',
+        parameters=[{'robot_description': robot_description}, motoman_controllers],
+        #remappings=[('joint_states', 'motoman/joint_states')],
+        output="screen",
+        on_exit=Shutdown(),
+    )
 
-        Node(package='rviz2',
+    joint_state_broadcaster_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['joint_state_broadcaster'],
+        output='screen',
+    )
+
+    robot_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=['forward_command_controller_position'],
+    )
+
+    # Delay start of robot_controller after `joint_state_broadcaster`
+    delay_robot_controller_spawner_after_joint_state_broadcaster_spawner = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=joint_state_broadcaster_spawner,
+            on_exit=[robot_controller_spawner],
+        )
+    )
+
+    rviz_node = Node(package='rviz2',
 			executable='rviz2',
 			name='rviz2',
 			arguments=['--display-config', rviz_file],
 			condition=IfCondition(use_rviz)
-		)
+	)
+    
 
-    ])
+    declared_arguments = []
+
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            robot_ip_parameter_name,
+            description='Hostname or IP address of the robot.')
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            use_rviz_parameter_name,
+            default_value='false',
+            description='Visualize the robot in Rviz')
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            load_gripper_parameter_name,
+            default_value='false',
+            description='Use Gripper as an end-effector, otherwise, the robot is loaded '
+                        'without an end-effector.')
+    )
+
+
+
+    gripper_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([PathJoinSubstitution([FindPackageShare('motoman_gripper'), 'launch', 'gripper.launch.py'])]),
+        launch_arguments={robot_ip_parameter_name: robot_ip}.items(),
+        condition=IfCondition(load_gripper)
+    )
+
+    # ------------------ NODES ------------------
+    nodes = [
+        controller_node,
+        robot_state_pub_node,
+        joint_state_broadcaster_spawner,
+        delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
+        gripper_launch
+    ]
+
+    return LaunchDescription(declared_arguments + nodes)
