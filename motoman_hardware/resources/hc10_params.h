@@ -58,7 +58,7 @@ constexpr uint8_t axisType[8] =
     0,
     2,
     2
-}
+};
 
 #endif // HC10_PARAMS_H
 

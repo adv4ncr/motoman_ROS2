@@ -112,6 +112,11 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
     udp_timeout.tv_sec = 0;
     udp_timeout.tv_nsec = UDP_TIMEOUT;
 
+
+    // clear commands
+    memset(command_msg_.body.joint_command_ex.joint_command_ex_data->command, 0, simple_message::ROS_MAX_JOINT*sizeof(float));
+
+
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 
@@ -295,13 +300,25 @@ hardware_interface::return_type MotomanHardware::write(const rclcpp::Time & /*ti
     // set body
     command_msg_.body.joint_command_ex.message_id = state_msg_.body.joint_state_ex.message_id;
     command_msg_.body.joint_command_ex.number_of_valid_groups = state_msg_.body.joint_state_ex.number_of_valid_groups;
+    command_msg_.body.joint_command_ex.joint_command_ex_data->groupno = 0;
+
+    for(uint8_t i = 0; i < joints_size; i++)
+    {
+        //hw_commands_[i] = state_msg_.body.joint_state_ex.joint_state_ex_data[0].pos[i];
+        command_msg_.body.joint_command_ex.joint_command_ex_data->command[i] = hw_commands_[i];
+
+    }
+
+    // std::string s;
+    // for(auto v : command_msg_.body.joint_command_ex.joint_command_ex_data->command) s += std::to_string(v) + " ";
+    // RCLCPP_INFO(rclcpp::get_logger("MotomanHardware"), "UDP send cmd: %s", s.c_str());
 
     if(send(udp_socket_fd, &command_msg_, msg_len, MSG_CONFIRM) <0)
     {
         RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "UDP send error: %d", errno);
         return hardware_interface::return_type::ERROR;
     }
-
+    
     return hardware_interface::return_type::OK;
 }
 

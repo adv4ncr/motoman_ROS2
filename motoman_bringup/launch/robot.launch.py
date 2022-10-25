@@ -21,10 +21,43 @@ def generate_launch_description():
     robot_ip_parameter_name = 'robot_ip'
     load_gripper_parameter_name = 'load_gripper'
     use_rviz_parameter_name = 'use_rviz'
+    namespace_parameter_name = 'namespace'
 
     robot_ip = LaunchConfiguration(robot_ip_parameter_name)
     load_gripper = LaunchConfiguration(load_gripper_parameter_name)
     use_rviz = LaunchConfiguration(use_rviz_parameter_name)
+    namespace = LaunchConfiguration(namespace_parameter_name)
+
+    declared_arguments = []
+
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            robot_ip_parameter_name,
+            description='Hostname or IP address of the robot.')
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            use_rviz_parameter_name,
+            default_value='false',
+            description='Visualize the robot in Rviz')
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            load_gripper_parameter_name,
+            default_value='false',
+            description='Use Gripper as an end-effector, otherwise, the robot is loaded '
+                        'without an end-effector.')
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            'namespace',
+            default_value='/',
+            description='Namespace of launched nodes, useful for multi-robot setup. \
+                         If changed than also the namespace in the controllers \
+                         configuration needs to be updated. Expected format "<ns>/".',
+        )
+    )
+    
 
     # HC10 hardcoded #TODO
     motoman_xacro_file = os.path.join(get_package_share_directory('motoman_description'), 'robots', 'hc10.xacro')
@@ -50,6 +83,7 @@ def generate_launch_description():
         package='robot_state_publisher',
         executable='robot_state_publisher',
         name='robot_state_publisher',
+        namespace=namespace,
         output='screen',
         parameters=[{'robot_description': robot_description}],
     )
@@ -60,20 +94,24 @@ def generate_launch_description():
         parameters=[{'robot_description': robot_description}, motoman_controllers],
         #remappings=[('joint_states', 'motoman/joint_states')],
         output="screen",
+        namespace=namespace,
         on_exit=Shutdown(),
     )
 
     joint_state_broadcaster_spawner = Node(
         package='controller_manager',
         executable='spawner',
-        arguments=['joint_state_broadcaster'],
+        arguments=['joint_state_broadcaster', '--controller-manager',
+                   [namespace, 'controller_manager']],
         output='screen',
+        namespace=namespace,
     )
 
     robot_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=['forward_command_controller_position'],
+        arguments=['StaticTestController', '--controller-manager', [namespace, 'controller_manager']],
+        namespace=namespace,
     )
 
     # Delay start of robot_controller after `joint_state_broadcaster`
@@ -88,31 +126,10 @@ def generate_launch_description():
 			executable='rviz2',
 			name='rviz2',
 			arguments=['--display-config', rviz_file],
-			condition=IfCondition(use_rviz)
+			condition=IfCondition(use_rviz),
+            namespace=namespace,
 	)
     
-
-    declared_arguments = []
-
-    declared_arguments.append(
-        DeclareLaunchArgument(
-            robot_ip_parameter_name,
-            description='Hostname or IP address of the robot.')
-    )
-    declared_arguments.append(
-        DeclareLaunchArgument(
-            use_rviz_parameter_name,
-            default_value='false',
-            description='Visualize the robot in Rviz')
-    )
-    declared_arguments.append(
-        DeclareLaunchArgument(
-            load_gripper_parameter_name,
-            default_value='false',
-            description='Use Gripper as an end-effector, otherwise, the robot is loaded '
-                        'without an end-effector.')
-    )
-
 
 
     gripper_launch = IncludeLaunchDescription(

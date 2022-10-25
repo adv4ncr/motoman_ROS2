@@ -1,0 +1,7 @@
+<library path="motoman_controllers">
+  <class name="motoman_controllers/StaticTest" type="motoman_controllers::StaticTest" base_class_type="controller_interface::ControllerInterface">
+    <description>
+      Static test to verify driver functionality
+    </description>
+  </class>
+</library>

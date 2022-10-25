@@ -10,14 +10,30 @@ controller_manager:
     # joint_state_controller:
     #   type: joint_state_controller/JointStateController
 
-    forward_command_controller_position:
-      type: forward_command_controller/ForwardCommandController
+    JointGroupPositionController:
+    #forward_command_controller_position:
+      type: position_controllers/JointGroupPositionController
+      #type: forward_command_controller/ForwardCommandController
+
+    StaticTestController:
+      type: motoman_controllers/StaticTest
 
     # # not ready yet
     # joint_trajectory_controller:
     #   type: joint_effort_trajectory_controller/JointTrajectoryController
 
-forward_command_controller_position:
+JointGroupPositionController:
+  ros__parameters:
+    joints:
+      - joint_1_s
+      - joint_2_l
+      - joint_3_u
+      - joint_4_r
+      - joint_5_b
+      - joint_6_t
+    interface_name: position
+
+StaticTestController:
   ros__parameters:
     joints:
       - joint_1_s
