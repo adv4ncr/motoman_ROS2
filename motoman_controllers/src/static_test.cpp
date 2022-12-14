@@ -145,12 +145,18 @@ controller_interface::return_type StaticTest::update(const rclcpp::Time & /*time
 	{
 		for (_axs = 0; _axs < axes; _axs++)
 		{
-			//if(_axs > 3) // set test axis
+			if(_axs == 5) // set test axis
 			{
 				command_interfaces_[_axs].set_value(start_values[_axs] + values[counter][_axs]);
 			}
 		}
 		counter++;
+	}
+	else if(_sets < 10)
+	{
+		counter = 0;
+		_sets++;
+		RCLCPP_INFO(get_node()->get_logger(), "Set set %d", _sets);
 	}
 
 

@@ -13,8 +13,15 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
     hw_positions_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
     hw_velocities_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
     hw_commands_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
-
+    
     joints_size = info_.joints.size();
+    if(joints_size > RT_ROBOT_JOINTS_MAX)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), 
+            "Configured joint size (%ld) > RT_ROBOT_JOINTS_MAX (%d). Exit.", joints_size,RT_ROBOT_JOINTS_MAX);
+        return hardware_interface::CallbackReturn::ERROR;
+    }
+
     init_hw_commands = false;
 
     // check configuration
@@ -74,7 +81,7 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
     // get udp ip address and port
     ip_address = info_.hardware_parameters["udp_ip_address"];
     //udp_port = static_cast<uint16_t>(stoi(info_.hardware_parameters["udp_port"]));
-    RCLCPP_INFO(rclcpp::get_logger("MotomanHardware"), "UDP IP %s:%d", ip_address.c_str(), UDP_PORT_REALTIME_MOTION);
+    RCLCPP_INFO(rclcpp::get_logger("MotomanHardware"), "UDP IP %s:%d", ip_address.c_str(), REALTIME_MOTION_UDP_PORT);
     
     // creating udp socket fd
     udp_socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -87,7 +94,7 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
     // set udp server struct
     udp_servaddr.sin_family = AF_INET;
     inet_pton(AF_INET, ip_address.c_str(), &(udp_servaddr.sin_addr.s_addr));
-    udp_servaddr.sin_port = htons(UDP_PORT_REALTIME_MOTION);
+    udp_servaddr.sin_port = htons(REALTIME_MOTION_UDP_PORT);
     sizeof_udp_servaddr = sizeof(udp_servaddr);
 
     // get tcp ip address and port -> ip same as UDP, port hardcoded
@@ -113,9 +120,11 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
     udp_timeout.tv_nsec = UDP_TIMEOUT;
 
 
-    // clear commands
-    memset(command_msg_.body.joint_command_ex.joint_command_ex_data->command, 0, simple_message::ROS_MAX_JOINT*sizeof(float));
-
+    // clear msgs
+    memset(&rtMsgSend_, 0, RT_MSG_CMD_SIZE);
+    memset(&rtMsgSend_, 0, RT_MSG_STATE_SIZE);
+    rtMsgState_ = udp_rt_message::STATE_UNDEFINED;
+    rtMsgCode_ = udp_rt_message::CODE_UNDEFINED;
 
     return hardware_interface::CallbackReturn::SUCCESS;
 }
@@ -147,7 +156,7 @@ hardware_interface::CallbackReturn MotomanHardware::on_configure(const rclcpp_li
     // "connect" to udp socket - enables recv / send instead of recvfrom / sendto
     if(connect(udp_socket_fd, (struct sockaddr*)&udp_servaddr, sizeof_udp_servaddr) != 0)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "UDP: Failed to connect to port %d. ERRNO: %d", UDP_PORT_REALTIME_MOTION, errno);
+        RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "UDP: Failed to connect to port %d. ERRNO: %d", REALTIME_MOTION_UDP_PORT, errno);
         return hardware_interface::CallbackReturn::FAILURE; 
     }
 
@@ -160,31 +169,43 @@ hardware_interface::CallbackReturn MotomanHardware::on_deactivate(const rclcpp_l
 {
     RCLCPP_INFO(rclcpp::get_logger("MotomanHardware"), "Deactivating ...please wait...");
 
-    int8_t ret = tcp_motion_request(simple_message::SmCommandType::ROS_CMD_STOP_RT_MODE);
-    if(ret == -1)
+    if(!send_tcp_request(simple_message::SmCommandType::ROS_CMD_STOP_RT_MODE))
     {
-        RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "Error in TCP MotionReq. ERRNO: %d", errno);
-        return CallbackReturn::ERROR;
+        RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "Error in TCP request. ERRNO: %d", errno);
+        return CallbackReturn::FAILURE;
     }
-    else if(!ret) return CallbackReturn::FAILURE;
 
     RCLCPP_INFO(rclcpp::get_logger("MotomanHardware"), "Successfully deactivated!");
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 
-
 hardware_interface::CallbackReturn MotomanHardware::on_activate(const rclcpp_lifecycle::State & /* previous_state */)
 {
     RCLCPP_INFO(rclcpp::get_logger("MotomanHardware"), "Starting ...please wait...");
 
+    // set default values
+    for (auto i = 0u; i < hw_positions_.size(); i++)
+    {
+        if (std::isnan(hw_positions_[i]))
+        {
+            hw_positions_[i] = 0;
+            hw_velocities_[i] = 0;
+            hw_commands_[i] = 0;
+        }
+    }
 
-    int8_t ret = tcp_motion_request(simple_message::SmCommandType::ROS_CMD_START_RT_MODE);
+    // Request robot controller
+    int ret = send_tcp_request(simple_message::SmCommandType::ROS_CMD_START_RT_MODE);
     if(ret == -1)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "Error in TCP MotionReq");
-        return CallbackReturn::ERROR;
+        RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "Error in TCP request. ERRNO: %d", errno);
+        return CallbackReturn::FAILURE;
     }
-    else if(!ret) return CallbackReturn::FAILURE;
+    // else if(ret == 1)
+    // {
+    //     RCLCPP_WARN(rclcpp::get_logger("MotomanHardware"), "Robot already running");
+    //     return CallbackReturn::SUCCESS;
+    // }
 
 
     // wait for x seconds #TODO better wait for TCP response
@@ -197,29 +218,17 @@ hardware_interface::CallbackReturn MotomanHardware::on_activate(const rclcpp_lif
     }
 
     // send controller the UDP client ip
-    unsigned char buf[1] = {250}; // #TEST1 run for x sec #TODO protocol
-    size_t buf_len = sizeof(buf);
-    bytesSend = send(udp_socket_fd, buf, buf_len, 0);
+    bytesSend = send(udp_socket_fd, &rtMsgSend_, RT_MSG_CMD_SIZE, 0);
     // #TODO better use select and timeout here, else BLOCKING forever ...
-    bytesRecv = recv(udp_socket_fd, buf, buf_len, 0);
+    bytesRecv = recv(udp_socket_fd, &rtMsgRecv_, RT_MSG_STATE_SIZE, 0);
 
-    if(buf[0] != 0) // any (not yet received) controller error #TODO protocol 
+    // Check if controller started successfully
+    if(rtMsgRecv_.header.msg_code != udp_rt_message::CODE_CONFIRM)
     {
-        RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "Controller not started.");
+        RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "Controller not started. ERROR: %d", rtMsgRecv_.header.msg_code);
         return CallbackReturn::FAILURE;
     }
 
-    
-    // set default values
-    for (auto i = 0u; i < hw_positions_.size(); i++)
-    {
-        if (std::isnan(hw_positions_[i]))
-        {
-            hw_positions_[i] = 0;
-            hw_velocities_[i] = 0;
-            hw_commands_[i] = 0;
-        }
-    }
 
     RCLCPP_INFO(rclcpp::get_logger("MotomanHardware"), "Successfully activated!");
 
@@ -257,27 +266,45 @@ hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*tim
 
     //RCLCPP_INFO(rclcpp::get_logger("MotomanHardware"), "[UDP] Recv period: %ld ns", period.nanoseconds());
 
+    // clear message
+    memset(&rtMsgRecv_, 0, RT_MSG_STATE_SIZE);
+
     // receive UDP message
-    bytesRecv = recv(udp_socket_fd, &state_msg_, sizeof(state_msg_), 0);
+    bytesRecv = recv(udp_socket_fd, &rtMsgRecv_, RT_MSG_STATE_SIZE, 0);
     if(bytesRecv < 0)
     {
         RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "UDP receive error: %d", errno);
         return hardware_interface::return_type::ERROR;
     }
 
-    // set position and velocity to ROS2 control pipeline
-    for(uint8_t i = 0; i < joints_size; i++)
+    // Read current state
+    if(rtMsgState_ != rtMsgRecv_.header.msg_state)
     {
-        hw_positions_[i] = state_msg_.body.joint_state_ex.joint_state_ex_data[0].pos[i];
-        hw_velocities_[i] = state_msg_.body.joint_state_ex.joint_state_ex_data[0].vel[i];
+        rtMsgState_ = rtMsgRecv_.header.msg_state;
+        RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "Robot STATE: %d", rtMsgState_);
     }
 
-    // init commands:
+    // Read current code
+    if(rtMsgCode_ != rtMsgRecv_.header.msg_code)
+    {
+        rtMsgCode_ = rtMsgRecv_.header.msg_code;
+        RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "Robot CODE: %d", rtMsgCode_);
+    }
+
+    // Set position and velocity to ROS2 control pipeline
+    for(uint8_t i = 0; i < joints_size; i++)
+    {
+        // #TODO handle multiple robot control groups
+        hw_positions_[i] = rtMsgRecv_.body.state[0].pos[i];
+        hw_velocities_[i] = rtMsgRecv_.body.state[0].vel[i];
+    }
+
+    // Init commands: (set current robot joit angles as first commands)
     if(!init_hw_commands)
     {
         for(uint8_t i = 0; i < joints_size; i++)
         {
-            hw_commands_[i] = state_msg_.body.joint_state_ex.joint_state_ex_data[0].pos[i];
+            hw_commands_[i] = rtMsgRecv_.body.state[0].pos[i];
         }
         init_hw_commands = true;
     }
@@ -288,24 +315,15 @@ hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*tim
 
 hardware_interface::return_type MotomanHardware::write(const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
-    // set prefix length
-    command_msg_.prefix.length = sizeof(simple_message::Header) + sizeof(simple_message::MotoRealTimeMotionJointCommandEx);
-    size_t msg_len = sizeof(simple_message::Prefix) + sizeof(simple_message::Header) + sizeof(simple_message::MotoRealTimeMotionJointCommandEx);
-
-    // set header
-    command_msg_.header.msg_type = simple_message::MsgType::MOTO_REALTIME_MOTION_JOINT_COMMAND_EX;
-    command_msg_.header.comm_type = simple_message::CommType::TOPIC;
-    command_msg_.header.reply_type = simple_message::ReplyType::INVALID;
-
-    // set body
-    command_msg_.body.joint_command_ex.message_id = state_msg_.body.joint_state_ex.message_id;
-    command_msg_.body.joint_command_ex.number_of_valid_groups = state_msg_.body.joint_state_ex.number_of_valid_groups;
-    command_msg_.body.joint_command_ex.joint_command_ex_data->groupno = 0;
+    // Set header
+    rtMsgSend_.header.msg_state = rtMsgRecv_.header.msg_state;
+    rtMsgSend_.header.msg_code = udp_rt_message::CODE_UNDEFINED; // #TODO
+    rtMsgSend_.header.msg_sequence = rtMsgRecv_.header.msg_sequence;
 
     for(uint8_t i = 0; i < joints_size; i++)
     {
-        //hw_commands_[i] = state_msg_.body.joint_state_ex.joint_state_ex_data[0].pos[i];
-        command_msg_.body.joint_command_ex.joint_command_ex_data->command[i] = hw_commands_[i];
+        // #TODO handle multiple control groups
+        rtMsgSend_.body.command[0].pos[i] = hw_commands_[i];
 
     }
 
@@ -313,7 +331,7 @@ hardware_interface::return_type MotomanHardware::write(const rclcpp::Time & /*ti
     // for(auto v : command_msg_.body.joint_command_ex.joint_command_ex_data->command) s += std::to_string(v) + " ";
     // RCLCPP_INFO(rclcpp::get_logger("MotomanHardware"), "UDP send cmd: %s", s.c_str());
 
-    if(send(udp_socket_fd, &command_msg_, msg_len, MSG_CONFIRM) <0)
+    if(send(udp_socket_fd, &rtMsgSend_, RT_MSG_CMD_SIZE, MSG_CONFIRM) <0)
     {
         RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "UDP send error: %d", errno);
         return hardware_interface::return_type::ERROR;
@@ -351,7 +369,7 @@ std::vector<hardware_interface::CommandInterface> MotomanHardware::export_comman
 }
 
 
-int8_t MotomanHardware::tcp_motion_request(simple_message::SmCommandType command)
+int MotomanHardware::send_tcp_request(simple_message::SmCommandType command)
 {
     // ------------------ SEND REQUEST ------------------
     // prepare tcp motion request
@@ -400,9 +418,22 @@ int8_t MotomanHardware::tcp_motion_request(simple_message::SmCommandType command
         return -1;  
     }
     //RCLCPP_INFO(rclcpp::get_logger("MotomanHardware"), "[TCP] Recv got result: %d\n", motionResp.body.motionReply.result);
-    if(motionResp.body.motionReply.result == simple_message::SmResultType::ROS_RESULT_SUCCESS) return 1;
-    else if(motionResp.body.motionReply.result == simple_message::SmResultType::ROS_RESULT_FAILURE) return 0;
-
+    
+    switch (motionResp.body.motionReply.result)
+    {
+    case simple_message::SmResultType::ROS_RESULT_SUCCESS:
+        return 0;
+        break;
+    case simple_message::SmResultType::ROS_RESULT_BUSY:
+        return 1;
+        break;
+    case simple_message::SmResultType::ROS_RESULT_FAILURE:
+        return -1;
+        break;
+    default:
+        break;
+    }
+    
     RCLCPP_WARN(rclcpp::get_logger("MotomanHardware"), "[TCP] Recv unknown result: %d", motionResp.body.motionReply.result);
     return -1;
 }

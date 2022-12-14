@@ -17,6 +17,7 @@
 #include <arpa/inet.h>
 
 #include "motoman_hardware/simple_message.hpp"
+#include "motoman_hardware/udp_rt_protocol.h"
 #include "motoman_hardware/visibility_control.h"
 
 
@@ -91,7 +92,7 @@ public:
 
 private:
 
-    int8_t tcp_motion_request(simple_message::SmCommandType command);
+    int send_tcp_request(simple_message::SmCommandType command);
 
     std::vector<double> hw_commands_;
     std::vector<double> hw_positions_;
@@ -99,9 +100,10 @@ private:
     bool init_hw_commands;
     size_t joints_size;
 
-    // simple messages
-    simple_message::SimpleMessage state_msg_;
-    simple_message::SimpleMessage command_msg_;
+    // RT message variables
+    udp_rt_message::RtMsg rtMsgRecv_, rtMsgSend_;
+    udp_rt_message::RtMsgState rtMsgState_;
+    udp_rt_message::RtMsgCode rtMsgCode_;
 
     // Network communication
     struct sockaddr_in udp_servaddr, tcp_servaddr;

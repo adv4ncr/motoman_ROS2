@@ -20,7 +20,6 @@
 #define TCP_PORT_STATE						50241
 #define TCP_PORT_IO							  50242
 #define TCP_PORT_MOTION_COMMAND   50243
-#define UDP_PORT_REALTIME_MOTION  50244
 
 namespace motoman_hardware::simple_message
 {

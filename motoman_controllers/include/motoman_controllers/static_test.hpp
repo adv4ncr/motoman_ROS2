@@ -91,10 +91,10 @@ private:
         0
     };
 
-    #define period_len 125
+    #define period_len 500
     #define values_size period_len*3+1
     #define axes 6
-    #define scale_factor 0.1
+    #define scale_factor 0.75
 
     double factors[axes];
     double values[values_size][axes];
@@ -105,6 +105,7 @@ private:
 
     double start_values[axes];
     u_int32_t counter = 0;
+    u_int32_t _sets = 0;
 
 };
 } // namespace motoman_controllers
