@@ -61,9 +61,9 @@ def generate_launch_description():
 
     # ros2_control using FakeSystem as hardware
     ros2_controllers_path = os.path.join(
-        get_package_share_directory("motoman_bringup"),
+        get_package_share_directory("motoman_hc10_moveit_config"),
         "config",
-        "controllers.yaml",
+        "ros2_controllers.yaml",
     )
     ros2_control_node = Node(
         package="controller_manager",
@@ -87,7 +87,7 @@ def generate_launch_description():
     robot_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["joint_trajectory_controller", "-c", "/controller_manager"],
+        arguments=["manipulator_controller", "-c", "/controller_manager"],
     )
 
     # Launch as much as possible in components
