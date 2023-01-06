@@ -18,9 +18,10 @@ controller_manager:
     StaticTestController:
       type: motoman_controllers/StaticTest
 
-    # # not ready yet
-    # joint_trajectory_controller:
-    #   type: joint_effort_trajectory_controller/JointTrajectoryController
+    joint_trajectory_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+
 
 JointGroupPositionController:
   ros__parameters:
@@ -44,28 +45,31 @@ StaticTestController:
       - joint_6_t
     interface_name: position
 
-# joint_trajectory_controller:
-#   ros__parameters:
-#     joints:
-#       - joint_1_s
-#       - joint_2_l
-#       - joint_3_u
-#       - joint_4_r
-#       - joint_5_b
-#       - joint_6_t
-#     command_interfaces:
-#       - velocity
-#     state_interfaces:
-#       - position
-#       - velocity
-#     gains:
-#       joint_1_s: { p: 600., d: 30., i: 0., i_clamp: 1. }
-#       joint_2_l: { p: 600., d: 30., i: 0., i_clamp: 1. }
-#       joint_3_u: { p: 600., d: 30., i: 0., i_clamp: 1. }
-#       joint_4_r: { p: 600., d: 30., i: 0., i_clamp: 1. }
-#       joint_5_b: { p: 250., d: 10., i: 0., i_clamp: 1. }
-#       joint_6_t: { p: 150., d: 10., i: 0., i_clamp: 1. }
+joint_trajectory_controller:
+  ros__parameters:
+    joints:
+      - joint1
+      - joint2
+      - joint3
+      - joint4
+      - joint5
+      - joint6
 
+    command_interfaces:
+      - position
 
+    state_interfaces:
+      - position
+      - velocity
 
+    state_publish_rate: 50.0
+    action_monitor_rate: 20.0
 
+    allow_partial_joints_goal: false
+    open_loop_control: true
+    constraints:
+      stopped_velocity_tolerance: 0.01
+      goal_time: 0.0
+      joint1:
+        trajectory: 0.05
+        goal: 0.03

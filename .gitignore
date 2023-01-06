@@ -1,5 +1,6 @@
 # VS Code settings
-.vscode
+.vscode/
+*.code-workspace
 
 # Prerequisites
 *.d

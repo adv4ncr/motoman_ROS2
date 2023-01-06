@@ -18,13 +18,17 @@ from launch.event_handlers import OnProcessExit
 
 
 def generate_launch_description():
-    robot_ip_parameter_name = 'robot_ip'
-    load_gripper_parameter_name = 'load_gripper'
-    use_rviz_parameter_name = 'use_rviz'
-    namespace_parameter_name = 'namespace'
+    robot_ip_parameter_name = "robot_ip"
+    mock_hardware_parameter_name = "use_mock_hardware"
+    mock_sensor_commands_parameter_name = "mock_sensor_commands"
+    load_gripper_parameter_name = "load_gripper"
+    use_rviz_parameter_name = "use_rviz"
+    namespace_parameter_name = "namespace"
 
     robot_ip = LaunchConfiguration(robot_ip_parameter_name)
     load_gripper = LaunchConfiguration(load_gripper_parameter_name)
+    mock_hardware = LaunchConfiguration(mock_hardware_parameter_name)
+    mock_sensor_commands = LaunchConfiguration(mock_sensor_commands_parameter_name)
     use_rviz = LaunchConfiguration(use_rviz_parameter_name)
     namespace = LaunchConfiguration(namespace_parameter_name)
 
@@ -38,13 +42,13 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             use_rviz_parameter_name,
-            default_value='false',
+            default_value="false",
             description='Visualize the robot in Rviz')
     )
     declared_arguments.append(
         DeclareLaunchArgument(
             load_gripper_parameter_name,
-            default_value='false',
+            default_value="false",
             description='Use Gripper as an end-effector, otherwise, the robot is loaded '
                         'without an end-effector.')
     )
@@ -57,6 +61,21 @@ def generate_launch_description():
                          configuration needs to be updated. Expected format "<ns>/".',
         )
     )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            mock_hardware_parameter_name,
+            default_value="false",
+            description="Start robot with fake hardware mirroring command to its states.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            mock_sensor_commands_parameter_name,
+            default_value="false",
+            description="Enable fake command interfaces for sensors used for simple simulations. \
+            Used only if 'use_mock_hardware' parameter is true.",
+        )
+    )
     
 
     # HC10 hardcoded #TODO
@@ -64,8 +83,9 @@ def generate_launch_description():
 
     robot_description = Command(
         [FindExecutable(name='xacro'), ' ', motoman_xacro_file, #' hand:=', load_gripper,
-         ' robot_ip:=', robot_ip, #' use_fake_hardware:=', use_fake_hardware,
-         ' fake_sensor_commands:=', #fake_sensor_commands
+         ' robot_ip:=', robot_ip,
+         ' use_mock_hardware:=', mock_hardware,
+         ' mock_sensor_commands:=', mock_sensor_commands,
         ])
 
     rviz_file = os.path.join(get_package_share_directory('motoman_description'), 'rviz',

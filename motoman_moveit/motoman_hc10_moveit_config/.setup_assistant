@@ -1,0 +1,25 @@
+moveit_setup_assistant_config:
+  urdf:
+    package: motoman_description
+    relative_path: robots/hc10.xacro
+  srdf:
+    relative_path: config/motoman_hc10.srdf
+  package_settings:
+    author_name: adv4ncr
+    author_email: adv4ncr@notmy.mail
+    generated_timestamp: 1671465988
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+      - velocity
+  modified_urdf:
+    xacros:
+      - control_xacro
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+      - velocity

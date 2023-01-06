@@ -3,12 +3,22 @@
 
   <xacro:arg name="arm_id" default=""/> <!-- Name of this robot, not used yet -->
   <xacro:arg name="robot_ip" default=""/> <!-- IP address or hostname of the robot" -->
+  <xacro:arg name="use_mock_hardware" default="false"/> <!-- Mirror commands to hardware states -->
+  <xacro:arg name="mock_sensor_commands" default="false"/> <!-- Use fake sensor input-->
+  <xacro:arg name="sim_gazebo" default="false" /> <!-- Use gazebo simulation-->
   
+
   <xacro:include filename="$(find motoman_description)/robots/hc10_macro.xacro" />
   <xacro:motoman_hc10 prefix=""/>
 
   <xacro:include filename="$(find motoman_description)/robots/ros2_control.xacro"/>
-  <xacro:motoman_ros2_control ns="$(arg arm_id)" robot_ip="$(arg robot_ip)"/>
+  <xacro:motoman_ros2_control 
+    ns="$(arg arm_id)" 
+    robot_ip="$(arg robot_ip)"
+    use_mock_hardware="$(arg use_mock_hardware)"
+    mock_sensor_commands="$(arg mock_sensor_commands)"
+    sim_gazebo="$(arg sim_gazebo)"
+  />
 
 
 </robot>

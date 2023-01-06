@@ -18,7 +18,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
     forward_command_controller
     pluginlib
     controller_interface
-    generate_parameter_library
+    # generate_parameter_library
 )
 
 # find dependencies
