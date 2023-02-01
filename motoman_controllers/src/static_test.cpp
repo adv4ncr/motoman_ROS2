@@ -38,12 +38,52 @@ controller_interface::CallbackReturn StaticTest::on_init()
 	return CallbackReturn::SUCCESS;
 }
 
+controller_interface::CallbackReturn StaticTest::on_configure(const rclcpp_lifecycle::State & prev_state)
+{
+	// Run base configure
+	auto ret = forward_command_controller::ForwardControllersBase::on_configure(prev_state);
+	if (ret != CallbackReturn::SUCCESS)
+	{
+		return ret;
+	}
+
+	// Get names of actuated joints
+	joint_names = get_node()->get_parameter("joints").as_string_array();
+	if (joint_names.empty())
+	{
+		RCLCPP_ERROR(get_node()->get_logger(), "joints array is empty");
+		return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+	}
+
+	// Get the state_interfaces parameter
+	state_interface_types = get_node()->get_parameter("state_interfaces").as_string_array();
+	if (state_interface_types.empty())
+	{
+		RCLCPP_ERROR(get_node()->get_logger(), "No state_interfaces specified");
+		return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+	}
+
+	return CallbackReturn::SUCCESS;
+}
+
 controller_interface::InterfaceConfiguration StaticTest::state_interface_configuration() const
 {
-  controller_interface::InterfaceConfiguration conf;
-  conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-  conf.names = command_interface_types_; // #TODO dirty test. Just works, because both interface_names are 'position'
-  return conf;
+	controller_interface::InterfaceConfiguration conf;
+	conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
+	// conf.names = command_interface_types_; // #TODO Just works, because both interface_names are 'position'
+
+	conf.names.reserve(joint_names.size() * state_interface_types.size());
+
+	for (const auto & interface_type : state_interface_types)
+	{
+		for (const auto & joint_name : joint_names)
+		{
+			conf.names.push_back(joint_name + "/" + interface_type);
+		}
+	}
+
+	// for(const auto & _s : conf.names) RCLCPP_WARN(get_node()->get_logger(), "conf.names: %s", _s.c_str());
+	return conf;
 }
 
 controller_interface::CallbackReturn StaticTest::on_activate(
@@ -60,16 +100,16 @@ controller_interface::CallbackReturn StaticTest::on_activate(
 		return controller_interface::CallbackReturn::ERROR;
 	}
 
-	std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> ordered_state_interfaces;
-	if (!controller_interface::get_ordered_interfaces(
-		state_interfaces_, command_interface_types_, std::string(""), ordered_state_interfaces) ||
-		command_interface_types_.size() != ordered_state_interfaces.size())
-	{
-		RCLCPP_ERROR(
-			get_node()->get_logger(), "Expected %zu state interfaces, got %zu",
-			command_interface_types_.size(), ordered_state_interfaces.size());
-		return controller_interface::CallbackReturn::ERROR;
-	}
+	// std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> ordered_state_interfaces;
+	// if (!controller_interface::get_ordered_interfaces(
+	// 	state_interfaces_, state_interface_types, std::string(""), ordered_state_interfaces) ||
+	// 	state_interface_types.size() != ordered_state_interfaces.size())
+	// {
+	// 	RCLCPP_ERROR(
+	// 		get_node()->get_logger(), "Expected %zu state interfaces, got %zu",
+	// 		state_interface_types.size(), ordered_state_interfaces.size());
+	// 	return controller_interface::CallbackReturn::ERROR;
+	// }
 
 	// reset command buffer if a command came through callback when controller was inactive
 	rt_command_ptr_ = realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>>(nullptr);
@@ -78,13 +118,14 @@ controller_interface::CallbackReturn StaticTest::on_activate(
 	if(axes != state_interfaces_.size())
 	{
 		RCLCPP_ERROR(
-			get_node()->get_logger(), "Expected %d state interfaces, got %zu",
+			get_node()->get_logger(), "Expected %d state interfaces, got %zu!",
 			axes, state_interfaces_.size());
 		return controller_interface::CallbackReturn::ERROR;
 	}
 
+
 	// check current position
-	for (auto index = 0u; index < state_interfaces_.size(); ++index)
+	for (auto index = 0u; index < 6; ++index)
 	{
 		auto pos = state_interfaces_[index].get_value();
 		auto name = state_interfaces_[index].get_name();
@@ -152,7 +193,7 @@ controller_interface::return_type StaticTest::update(const rclcpp::Time & /*time
 		}
 		counter++;
 	}
-	else if(_sets < 10)
+	else if(_sets < 5)
 	{
 		counter = 0;
 		_sets++;

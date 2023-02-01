@@ -44,6 +44,9 @@ StaticTestController:
       - joint_5_b
       - joint_6_t
     interface_name: position
+    state_interfaces:
+      # - position
+      - pos_fb
 
 joint_trajectory_controller:
   ros__parameters:

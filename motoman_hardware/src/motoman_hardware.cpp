@@ -9,12 +9,18 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
     {
         return hardware_interface::CallbackReturn::ERROR;
     }
-
-    hw_positions_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
-    hw_velocities_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
-    hw_commands_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
     
+    // Set current joint size
     joints_size = info_.joints.size();
+
+    hw_commands.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
+    hw_pos_set.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
+    hw_vel_set.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
+    hw_pos_fb.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
+    hw_vel_fb.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
+
+
+    // Validate the udp_rt_protocol parameters
     if(joints_size > RT_ROBOT_JOINTS_MAX)
     {
         RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), 
@@ -22,6 +28,7 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
         return hardware_interface::CallbackReturn::ERROR;
     }
 
+    // Set current position as first hardware command
     init_hw_commands = false;
 
     // check configuration
@@ -47,15 +54,15 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
             return hardware_interface::CallbackReturn::ERROR;
         }
 
-        // check joint state interface size
-        if (joint.state_interfaces.size() != 2)
-        {
-            RCLCPP_FATAL(
-                rclcpp::get_logger("MotomanHardware"),
-                "Joint '%s' has %zu state interface. 2 expected.", joint.name.c_str(),
-                joint.state_interfaces.size());
-            return hardware_interface::CallbackReturn::ERROR;
-        }
+        // // check joint state interface size
+        // if (joint.state_interfaces.size() != 2)
+        // {
+        //     RCLCPP_FATAL(
+        //         rclcpp::get_logger("MotomanHardware"),
+        //         "Joint '%s' has %zu state interface. 2 expected.", joint.name.c_str(),
+        //         joint.state_interfaces.size());
+        //     return hardware_interface::CallbackReturn::ERROR;
+        // }
 
         // check first joint state interface
         if (joint.state_interfaces[0].name != hardware_interface::HW_IF_POSITION)
@@ -76,6 +83,10 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
                 joint.state_interfaces[1].name.c_str(), hardware_interface::HW_IF_VELOCITY);
             return hardware_interface::CallbackReturn::ERROR;
         }
+
+        // There are actually 2 more.
+        // 2 position states (set, feedback)
+        // 2 velocity states (set, feedback)
     }
 
     // get udp ip address and port
@@ -184,13 +195,15 @@ hardware_interface::CallbackReturn MotomanHardware::on_activate(const rclcpp_lif
     RCLCPP_INFO(rclcpp::get_logger("MotomanHardware"), "Starting ...please wait...");
 
     // set default values
-    for (auto i = 0u; i < hw_positions_.size(); i++)
+    for (auto i = 0u; i < joints_size; i++)
     {
-        if (std::isnan(hw_positions_[i]))
+        if (std::isnan(hw_pos_set[i]))
         {
-            hw_positions_[i] = 0;
-            hw_velocities_[i] = 0;
-            hw_commands_[i] = 0;
+            hw_commands[i] = 0;
+            hw_pos_set[i] = 0;
+            hw_pos_fb[i] = 0;
+            hw_vel_set[i] = 0;
+            hw_vel_fb[i] = 0;
         }
     }
 
@@ -294,17 +307,19 @@ hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*tim
     // Set position and velocity to ROS2 control pipeline
     for(uint8_t i = 0; i < joints_size; i++)
     {
-        // #TODO handle multiple robot control groups
-        hw_positions_[i] = rtMsgRecv_.body.state[0].pos[i];
-        hw_velocities_[i] = rtMsgRecv_.body.state[0].vel[i];
+        hw_pos_set[i] = rtMsgRecv_.body.state[0].pos_set[i];
+        hw_pos_fb[i] = rtMsgRecv_.body.state[0].pos_fb[i];
+        hw_vel_set[i] = rtMsgRecv_.body.state[0].vel_set[i];
+        hw_vel_fb[i] = rtMsgRecv_.body.state[0].vel_fb[i];
     }
 
+    // #TODO remove in new controller software iteration
     // Init commands: (set current robot joit angles as first commands)
     if(!init_hw_commands)
     {
         for(uint8_t i = 0; i < joints_size; i++)
         {
-            hw_commands_[i] = rtMsgRecv_.body.state[0].pos[i];
+            hw_commands[i] = rtMsgRecv_.body.state[0].pos_fb[i];
         }
         init_hw_commands = true;
     }
@@ -323,8 +338,7 @@ hardware_interface::return_type MotomanHardware::write(const rclcpp::Time & /*ti
     for(uint8_t i = 0; i < joints_size; i++)
     {
         // #TODO handle multiple control groups
-        rtMsgSend_.body.command[0].pos[i] = hw_commands_[i];
-
+        rtMsgSend_.body.command[0].pos[i] = hw_commands[i];
     }
 
     // std::string s;
@@ -347,9 +361,13 @@ std::vector<hardware_interface::StateInterface> MotomanHardware::export_state_in
     for (auto i = 0u; i < info_.joints.size(); i++)
     {
         state_interfaces.emplace_back(hardware_interface::StateInterface(
-            info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_positions_[i]));
+            info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_pos_set[i]));
         state_interfaces.emplace_back(hardware_interface::StateInterface(
-            info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_velocities_[i]));
+            info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_vel_set[i]));
+        state_interfaces.emplace_back(hardware_interface::StateInterface(
+            info_.joints[i].name, "pos_fb", &hw_pos_fb[i]));
+        state_interfaces.emplace_back(hardware_interface::StateInterface(
+            info_.joints[i].name, "vel_fb", &hw_vel_fb[i]));
     }
 
     return state_interfaces;
@@ -362,7 +380,7 @@ std::vector<hardware_interface::CommandInterface> MotomanHardware::export_comman
     for (auto i = 0u; i < info_.joints.size(); i++)
     {
         command_interfaces.emplace_back(hardware_interface::CommandInterface(
-        info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_commands_[i]));
+        info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_commands[i]));
     }
 
     return command_interfaces;
