@@ -39,9 +39,9 @@ public:
     MOTOMAN_CONTROLLERS_PUBLIC
     controller_interface::CallbackReturn on_init() override;
 
-    // MOTOMAN_CONTROLLERS_PUBLIC
-    // controller_interface::CallbackReturn on_configure(
-    // const rclcpp_lifecycle::State & previous_state) override;
+    MOTOMAN_CONTROLLERS_PUBLIC
+    controller_interface::CallbackReturn on_configure(
+    const rclcpp_lifecycle::State & previous_state) override;
 
     MOTOMAN_CONTROLLERS_PUBLIC
     controller_interface::CallbackReturn on_activate(
@@ -66,6 +66,9 @@ protected:
     // };
 
 private:
+
+    std::vector<std::string> state_interface_types;
+    std::vector<std::string> joint_names;
 
     const float pulseToRad[8] =
     {
@@ -94,7 +97,7 @@ private:
     #define period_len 500
     #define values_size period_len*3+1
     #define axes 6
-    #define scale_factor 0.75
+    #define scale_factor 0.5
 
     double factors[axes];
     double values[values_size][axes];

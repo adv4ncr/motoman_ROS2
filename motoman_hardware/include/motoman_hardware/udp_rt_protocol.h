@@ -7,7 +7,7 @@
 #define REALTIME_MOTION_UDP_PORT 50244
 #define TCP_PORT_MOTION_COMMAND   50243
 
-#define RT_ROBOT_JOINTS_MAX 6
+#define RT_ROBOT_JOINTS_MAX 8
 #define RT_ROBOT_GROUPS 1
 
 #ifdef __cplusplus
@@ -157,8 +157,10 @@ namespace motoman_hardware::udp_rt_message
 
 	struct _RtMsgBodyState
 	{
-		float pos[RT_ROBOT_JOINTS_MAX];
-		float vel[RT_ROBOT_JOINTS_MAX];
+		float pos_set[RT_ROBOT_JOINTS_MAX];
+		float pos_fb[RT_ROBOT_JOINTS_MAX];
+		float vel_set[RT_ROBOT_JOINTS_MAX];
+		float vel_fb[RT_ROBOT_JOINTS_MAX];
 	} __attribute__((packed));
 	typedef struct _RtMsgBodyState RtMsgBodyState;
 

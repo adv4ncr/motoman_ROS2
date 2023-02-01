@@ -14,6 +14,7 @@
                   <param name="initial_value">${initial_positions['joint_1_s']}</param>
                 </state_interface>
                 <state_interface name="velocity"/>
+                <state_interface name="acceleration"/>
             </joint>
             <joint name="joint_2_l">
                 <command_interface name="position"/>
@@ -21,6 +22,7 @@
                   <param name="initial_value">${initial_positions['joint_2_l']}</param>
                 </state_interface>
                 <state_interface name="velocity"/>
+                <state_interface name="acceleration"/>
             </joint>
             <joint name="joint_3_u">
                 <command_interface name="position"/>
@@ -28,6 +30,7 @@
                   <param name="initial_value">${initial_positions['joint_3_u']}</param>
                 </state_interface>
                 <state_interface name="velocity"/>
+                <state_interface name="acceleration"/>
             </joint>
             <joint name="joint_4_r">
                 <command_interface name="position"/>
@@ -35,6 +38,7 @@
                   <param name="initial_value">${initial_positions['joint_4_r']}</param>
                 </state_interface>
                 <state_interface name="velocity"/>
+                <state_interface name="acceleration"/>
             </joint>
             <joint name="joint_5_b">
                 <command_interface name="position"/>
@@ -42,6 +46,7 @@
                   <param name="initial_value">${initial_positions['joint_5_b']}</param>
                 </state_interface>
                 <state_interface name="velocity"/>
+                <state_interface name="acceleration"/>
             </joint>
             <joint name="joint_6_t">
                 <command_interface name="position"/>
@@ -49,6 +54,7 @@
                   <param name="initial_value">${initial_positions['joint_6_t']}</param>
                 </state_interface>
                 <state_interface name="velocity"/>
+                <state_interface name="acceleration"/>
             </joint>
 
         </ros2_control>
