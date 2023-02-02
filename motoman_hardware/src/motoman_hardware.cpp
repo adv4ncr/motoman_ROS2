@@ -14,9 +14,10 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
     joints_size = info_.joints.size();
 
     hw_commands.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
+    hw_pos_cmd.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
     hw_pos_set.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
-    hw_vel_set.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
     hw_pos_fb.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
+    hw_vel_set.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
     hw_vel_fb.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
 
 
@@ -200,6 +201,7 @@ hardware_interface::CallbackReturn MotomanHardware::on_activate(const rclcpp_lif
         if (std::isnan(hw_pos_set[i]))
         {
             hw_commands[i] = 0;
+            hw_pos_cmd[i] = 0;
             hw_pos_set[i] = 0;
             hw_pos_fb[i] = 0;
             hw_vel_set[i] = 0;
@@ -339,6 +341,7 @@ hardware_interface::return_type MotomanHardware::write(const rclcpp::Time & /*ti
     {
         // #TODO handle multiple control groups
         rtMsgSend_.body.command[0].pos[i] = hw_commands[i];
+        hw_pos_cmd[i] = hw_commands[i];     // #TEST publish current command in state interface
     }
 
     // std::string s;
@@ -366,6 +369,8 @@ std::vector<hardware_interface::StateInterface> MotomanHardware::export_state_in
             info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_vel_set[i]));
         state_interfaces.emplace_back(hardware_interface::StateInterface(
             info_.joints[i].name, "pos_fb", &hw_pos_fb[i]));
+        state_interfaces.emplace_back(hardware_interface::StateInterface(
+            info_.joints[i].name, "pos_cmd", &hw_pos_cmd[i]));
         state_interfaces.emplace_back(hardware_interface::StateInterface(
             info_.joints[i].name, "vel_fb", &hw_vel_fb[i]));
     }

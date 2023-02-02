@@ -35,3 +35,5 @@
 *.out
 *.app
 
+motoman_test_py/*
+motoman_test_cpp/*

@@ -148,6 +148,14 @@
     </joint>
     <!-- end of joint list -->
 
+    <!-- robot tracking target -->
+    <link name="${prefix}tool_marker"/>
+    <joint name="${prefix}tool0-marker" type="fixed">
+      <origin xyz="0 0 0.1" rpy="0 0 0"/>
+      <parent link="${prefix}tool0"/>
+      <child link="${prefix}tool_marker"/>
+    </joint>
+
     <!-- ROS base_link to Robot Manufacturer World Coordinates transform -->
     <link name="${prefix}base" />
     <joint name="${prefix}base_link-base" type="fixed">
@@ -155,5 +163,14 @@
       <parent link="${prefix}base_link"/>
       <child link="${prefix}base"/>
     </joint>
+
+    <!-- create link fixed to the "world" -->
+    <link name="world" />
+    <joint name="${prefix}world-base_link" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <parent link="${prefix}world"/>
+      <child link="${prefix}base_link"/>
+    </joint>
+
   </xacro:macro>
 </robot>

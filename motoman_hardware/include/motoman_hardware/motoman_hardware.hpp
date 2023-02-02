@@ -95,9 +95,10 @@ private:
     int send_tcp_request(simple_message::SmCommandType command);
 
     std::vector<double> hw_commands;
+    std::vector<double> hw_pos_cmd;
     std::vector<double> hw_pos_set;
-    std::vector<double> hw_vel_set;
     std::vector<double> hw_pos_fb;
+    std::vector<double> hw_vel_set;
     std::vector<double> hw_vel_fb;
 
     bool init_hw_commands;

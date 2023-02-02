@@ -23,6 +23,9 @@
                     <state_interface name="pos_fb">
                         <param name="initial_value">0.0</param>
                     </state_interface>
+                    <state_interface name="pos_cmd">
+                        <param name="initial_value">0.0</param>
+                    </state_interface>
                     <state_interface name="vel_fb">
                         <param name="initial_value">0.0</param>
                     </state_interface>
@@ -60,6 +63,9 @@
                 <state_interface name="pos_fb">
                     <param name="initial_value">0.0</param>
                 </state_interface>
+                <state_interface name="pos_cmd">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
                 <state_interface name="vel_fb">
                     <param name="initial_value">0.0</param>
                 </state_interface>
@@ -76,6 +82,9 @@
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="pos_fb">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="pos_cmd">
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="vel_fb">
@@ -96,6 +105,9 @@
                 <state_interface name="pos_fb">
                     <param name="initial_value">0.0</param>
                 </state_interface>
+                <state_interface name="pos_cmd">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
                 <state_interface name="vel_fb">
                     <param name="initial_value">0.0</param>
                 </state_interface>
@@ -112,6 +124,9 @@
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="pos_fb">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="pos_cmd">
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="vel_fb">
@@ -132,6 +147,9 @@
                 <state_interface name="pos_fb">
                     <param name="initial_value">0.0</param>
                 </state_interface>
+                <state_interface name="pos_cmd">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
                 <state_interface name="vel_fb">
                     <param name="initial_value">0.0</param>
                 </state_interface>
@@ -148,6 +166,9 @@
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="pos_fb">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="pos_cmd">
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="vel_fb">
