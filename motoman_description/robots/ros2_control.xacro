@@ -13,23 +13,10 @@
             <!-- <xacro:macro name="configure_joint" params="joint_name initial_position">
                 <joint name="${joint_name}">
                 <param name="initial_position">${initial_position}</param>
-                    <command_interface name="position"/>
-                    <state_interface name="position">
+                    <command_interface name="position_example"/>
+                    <state_interface name="position_example">
                         <param name="initial_value">0.0</param>
                     </state_interface>
-                    <state_interface name="velocity">
-                        <param name="initial_value">0.0</param>
-                    </state_interface>
-                    <state_interface name="pos_fb">
-                        <param name="initial_value">0.0</param>
-                    </state_interface>
-                    <state_interface name="pos_cmd">
-                        <param name="initial_value">0.0</param>
-                    </state_interface>
-                    <state_interface name="vel_fb">
-                        <param name="initial_value">0.0</param>
-                    </state_interface>
-                    <state_interface name="effort"/>
                 </joint>
             </xacro:macro>
             <xacro:configure_joint joint_name="${ns}_joint1" initial_position="0.0"/> -->
@@ -60,10 +47,10 @@
                 <state_interface name="velocity">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_fb">
+                <state_interface name="pos_cmd">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_cmd">
+                <state_interface name="pos_fb">
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="vel_fb">
@@ -81,10 +68,10 @@
                 <state_interface name="velocity">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_fb">
+                <state_interface name="pos_cmd">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_cmd">
+                <state_interface name="pos_fb">
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="vel_fb">
@@ -102,10 +89,10 @@
                 <state_interface name="velocity">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_fb">
+                <state_interface name="pos_cmd">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_cmd">
+                <state_interface name="pos_fb">
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="vel_fb">
@@ -123,10 +110,10 @@
                 <state_interface name="velocity">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_fb">
+                <state_interface name="pos_cmd">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_cmd">
+                <state_interface name="pos_fb">
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="vel_fb">
@@ -144,10 +131,10 @@
                 <state_interface name="velocity">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_fb">
+                <state_interface name="pos_cmd">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_cmd">
+                <state_interface name="pos_fb">
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="vel_fb">
@@ -165,10 +152,10 @@
                 <state_interface name="velocity">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_fb">
+                <state_interface name="pos_cmd">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_cmd">
+                <state_interface name="pos_fb">
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="vel_fb">

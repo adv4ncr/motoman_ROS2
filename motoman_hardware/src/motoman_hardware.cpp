@@ -368,9 +368,9 @@ std::vector<hardware_interface::StateInterface> MotomanHardware::export_state_in
         state_interfaces.emplace_back(hardware_interface::StateInterface(
             info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_vel_set[i]));
         state_interfaces.emplace_back(hardware_interface::StateInterface(
-            info_.joints[i].name, "pos_fb", &hw_pos_fb[i]));
-        state_interfaces.emplace_back(hardware_interface::StateInterface(
             info_.joints[i].name, "pos_cmd", &hw_pos_cmd[i]));
+        state_interfaces.emplace_back(hardware_interface::StateInterface(
+            info_.joints[i].name, "pos_fb", &hw_pos_fb[i]));
         state_interfaces.emplace_back(hardware_interface::StateInterface(
             info_.joints[i].name, "vel_fb", &hw_vel_fb[i]));
     }
