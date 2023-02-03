@@ -19,7 +19,7 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
     hw_pos_fb.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
     hw_vel_set.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
     hw_vel_fb.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
-
+    hw_state_msg.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
 
     // Validate the udp_rt_protocol parameters
     if(joints_size > RT_ROBOT_JOINTS_MAX)
@@ -157,6 +157,8 @@ hardware_interface::CallbackReturn MotomanHardware::on_configure(const rclcpp_li
 {
     RCLCPP_INFO(rclcpp::get_logger("MotomanHardware"), "Configure Hardware ...");
 
+    // Configure robot state publisher #TODO, better than using joint double values!
+
     // connect the client socket to server socket
     if(connect(tcp_socket_fd, (struct sockaddr*)&tcp_servaddr, sizeof(tcp_servaddr)) != 0)
     {
@@ -206,6 +208,7 @@ hardware_interface::CallbackReturn MotomanHardware::on_activate(const rclcpp_lif
             hw_pos_fb[i] = 0;
             hw_vel_set[i] = 0;
             hw_vel_fb[i] = 0;
+            hw_state_msg[i] = 0;
         }
     }
 
@@ -313,6 +316,9 @@ hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*tim
         hw_pos_fb[i] = rtMsgRecv_.body.state[0].pos_fb[i];
         hw_vel_set[i] = rtMsgRecv_.body.state[0].vel_set[i];
         hw_vel_fb[i] = rtMsgRecv_.body.state[0].vel_fb[i];
+
+        // State reporting  #TODO replace with custom robot_state publisher
+        hw_state_msg[i] = static_cast<double>(rtMsgRecv_.header.msg_state);
     }
 
     // #TODO remove in new controller software iteration
@@ -373,6 +379,8 @@ std::vector<hardware_interface::StateInterface> MotomanHardware::export_state_in
             info_.joints[i].name, "pos_fb", &hw_pos_fb[i]));
         state_interfaces.emplace_back(hardware_interface::StateInterface(
             info_.joints[i].name, "vel_fb", &hw_vel_fb[i]));
+        state_interfaces.emplace_back(hardware_interface::StateInterface(
+            info_.joints[i].name, "state_msg", &hw_state_msg[i]));
     }
 
     return state_interfaces;

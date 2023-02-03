@@ -56,6 +56,9 @@
                 <state_interface name="vel_fb">
                     <param name="initial_value">0.0</param>
                 </state_interface>
+                <state_interface name="state_msg">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
             </joint>
             <joint name="joint_2_l">
                 <command_interface name="position">
@@ -75,6 +78,9 @@
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="vel_fb">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="state_msg">
                     <param name="initial_value">0.0</param>
                 </state_interface>
             </joint>
@@ -98,6 +104,9 @@
                 <state_interface name="vel_fb">
                     <param name="initial_value">0.0</param>
                 </state_interface>
+                <state_interface name="state_msg">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
             </joint>
             <joint name="joint_4_r">
                 <command_interface name="position">
@@ -117,6 +126,9 @@
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="vel_fb">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="state_msg">
                     <param name="initial_value">0.0</param>
                 </state_interface>
             </joint>
@@ -140,6 +152,9 @@
                 <state_interface name="vel_fb">
                     <param name="initial_value">0.0</param>
                 </state_interface>
+                <state_interface name="state_msg">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
             </joint>
             <joint name="joint_6_t">
                 <command_interface name="position">
@@ -159,6 +174,9 @@
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="vel_fb">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="state_msg">
                     <param name="initial_value">0.0</param>
                 </state_interface>
             </joint>

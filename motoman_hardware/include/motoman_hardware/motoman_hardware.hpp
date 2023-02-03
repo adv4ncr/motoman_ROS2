@@ -19,7 +19,7 @@
 #include "motoman_hardware/simple_message.hpp"
 #include "motoman_hardware/udp_rt_protocol.h"
 #include "motoman_hardware/visibility_control.h"
-
+// #include "motoman_description/msg/robot_state.hpp"
 
 
 namespace motoman_hardware
@@ -100,6 +100,8 @@ private:
     std::vector<double> hw_pos_fb;
     std::vector<double> hw_vel_set;
     std::vector<double> hw_vel_fb;
+
+    std::vector<double> hw_state_msg;
 
     bool init_hw_commands;
     size_t joints_size;
