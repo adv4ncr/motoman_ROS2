@@ -19,8 +19,16 @@
 #include "motoman_hardware/simple_message.hpp"
 #include "motoman_hardware/udp_rt_protocol.h"
 #include "motoman_hardware/visibility_control.h"
-// #include "motoman_description/msg/robot_state.hpp"
 
+#include <fastdds/dds/domain/DomainParticipantFactory.hpp>
+#include <fastdds/dds/domain/DomainParticipant.hpp>
+#include <fastdds/dds/topic/TypeSupport.hpp>
+#include <fastdds/dds/publisher/Publisher.hpp>
+#include <fastdds/dds/publisher/qos/PublisherQos.hpp>
+#include <fastdds/dds/publisher/DataWriter.hpp>
+#include <fastdds/dds/publisher/qos/DataWriterQos.hpp>
+//#include <fastdds/dds/publisher/DataWriterListener.hpp>
+#include "motoman_hardware/RobotStatePubSubTypes.h"
 
 namespace motoman_hardware
 {
@@ -102,6 +110,16 @@ private:
     std::vector<double> hw_vel_fb;
 
     std::vector<double> hw_state_msg;
+
+    // State msg publisher
+
+    motoman_description::msg::RobotState state_msg;
+    eprosima::fastdds::dds::Publisher* _state_publisher = nullptr;
+    eprosima::fastdds::dds::Topic* _state_topic  = nullptr;
+    eprosima::fastdds::dds::DataWriter* state_data_writer = nullptr;
+    eprosima::fastdds::dds::DomainParticipant* _state_domain_participant = nullptr;
+    eprosima::fastdds::dds::TypeSupport _state_type;
+
 
     bool init_hw_commands;
     size_t joints_size;

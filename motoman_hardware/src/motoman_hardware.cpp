@@ -9,6 +9,49 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
     {
         return hardware_interface::CallbackReturn::ERROR;
     }
+
+    // ----------- Initialize state publisher -----------
+
+    eprosima::fastdds::dds::DomainParticipantQos _participantQos;
+    _participantQos.name("Participant_publisher");
+    eprosima::fastdds::dds::DomainId_t _domain_ID = 12;
+    RCLCPP_WARN(rclcpp::get_logger("MotomanHardware"), "[DDS] setting domain ID: %d", _domain_ID);
+    _state_domain_participant = eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->create_participant(_domain_ID, _participantQos);
+    if (!_state_domain_participant)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "[DDS] failed to set participant");
+        return hardware_interface::CallbackReturn::ERROR;
+    }
+    
+    // Register the type
+    _state_type = eprosima::fastdds::dds::TypeSupport(new motoman_description::msg::RobotStatePubSubType());
+    _state_type.register_type(_state_domain_participant);
+    
+    // Create the Publisher
+    _state_publisher = _state_domain_participant->create_publisher(eprosima::fastdds::dds::PUBLISHER_QOS_DEFAULT, nullptr);
+    if (!_state_publisher)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "[DDS] failed to set publisher");
+        return hardware_interface::CallbackReturn::ERROR;
+    }
+    
+    // Create the publications Topic
+    _state_topic = _state_domain_participant->create_topic("rt/robot_controller_state", _state_type.get_type_name(), eprosima::fastdds::dds::TOPIC_QOS_DEFAULT);
+    if (!_state_topic)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "[DDS] failed to set topic");
+        return hardware_interface::CallbackReturn::ERROR;
+    }
+
+    // Create the DataWriter
+    state_data_writer = _state_publisher->create_datawriter(_state_topic, eprosima::fastdds::dds::DATAWRITER_QOS_DEFAULT, nullptr);
+    if (!state_data_writer)
+    {
+        RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "[DDS] failed to set DataWriter");
+        return hardware_interface::CallbackReturn::ERROR;
+    }
+
+    // ----------- Initialize hardware interface -----------
     
     // Set current joint size
     joints_size = info_.joints.size();
@@ -19,7 +62,7 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
     hw_pos_fb.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
     hw_vel_set.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
     hw_vel_fb.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
-    hw_state_msg.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
+    //hw_state_msg.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
 
     // Validate the udp_rt_protocol parameters
     if(joints_size > RT_ROBOT_JOINTS_MAX)
@@ -157,7 +200,6 @@ hardware_interface::CallbackReturn MotomanHardware::on_configure(const rclcpp_li
 {
     RCLCPP_INFO(rclcpp::get_logger("MotomanHardware"), "Configure Hardware ...");
 
-    // Configure robot state publisher #TODO, better than using joint double values!
 
     // connect the client socket to server socket
     if(connect(tcp_socket_fd, (struct sockaddr*)&tcp_servaddr, sizeof(tcp_servaddr)) != 0)
@@ -208,7 +250,7 @@ hardware_interface::CallbackReturn MotomanHardware::on_activate(const rclcpp_lif
             hw_pos_fb[i] = 0;
             hw_vel_set[i] = 0;
             hw_vel_fb[i] = 0;
-            hw_state_msg[i] = 0;
+            //hw_state_msg[i] = 0;
         }
     }
 
@@ -309,6 +351,11 @@ hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*tim
         RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "Robot CODE: %d", rtMsgCode_);
     }
 
+    // Publish controller state and code
+    state_msg.state(rtMsgRecv_.header.msg_state);
+    state_msg.code(rtMsgRecv_.header.msg_code);
+    state_data_writer->write(&state_msg);
+
     // Set position and velocity to ROS2 control pipeline
     for(uint8_t i = 0; i < joints_size; i++)
     {
@@ -316,9 +363,6 @@ hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*tim
         hw_pos_fb[i] = rtMsgRecv_.body.state[0].pos_fb[i];
         hw_vel_set[i] = rtMsgRecv_.body.state[0].vel_set[i];
         hw_vel_fb[i] = rtMsgRecv_.body.state[0].vel_fb[i];
-
-        // State reporting  #TODO replace with custom robot_state publisher
-        hw_state_msg[i] = static_cast<double>(rtMsgRecv_.header.msg_state);
     }
 
     // #TODO remove in new controller software iteration
@@ -379,8 +423,8 @@ std::vector<hardware_interface::StateInterface> MotomanHardware::export_state_in
             info_.joints[i].name, "pos_fb", &hw_pos_fb[i]));
         state_interfaces.emplace_back(hardware_interface::StateInterface(
             info_.joints[i].name, "vel_fb", &hw_vel_fb[i]));
-        state_interfaces.emplace_back(hardware_interface::StateInterface(
-            info_.joints[i].name, "state_msg", &hw_state_msg[i]));
+        // state_interfaces.emplace_back(hardware_interface::StateInterface(
+        //     info_.joints[i].name, "state_msg", &hw_state_msg[i]));
     }
 
     return state_interfaces;

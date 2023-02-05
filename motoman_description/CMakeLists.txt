@@ -17,6 +17,7 @@ find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/RobotState.msg"
+  "idl/RobotState.idl"
   #DEPENDENCIES std_msgs
 )
 
