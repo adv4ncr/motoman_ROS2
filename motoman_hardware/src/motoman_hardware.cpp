@@ -2,6 +2,20 @@
 
 namespace motoman_hardware
 {
+
+// Default constructor
+MotomanHardware::MotomanHardware()
+{
+    // Bind shutdown function, waiting for proper fix. See https://github.com/ros-controls/ros2_control/issues/472 
+    rclcpp::on_shutdown(std::bind(&MotomanHardware::shutdown_helper, this));
+}
+
+void MotomanHardware::shutdown_helper()
+{
+    RCLCPP_WARN(rclcpp::get_logger("MotomanHardware"), "shutdown helper");
+    MotomanHardware::on_shutdown(this->get_state());
+}
+
 hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_interface::HardwareInfo &info)
 {
     if ( hardware_interface::SystemInterface::on_init(info) !=
@@ -223,13 +237,15 @@ hardware_interface::CallbackReturn MotomanHardware::on_configure(const rclcpp_li
 
 hardware_interface::CallbackReturn MotomanHardware::on_deactivate(const rclcpp_lifecycle::State & /* previous_state */)
 {
-    RCLCPP_INFO(rclcpp::get_logger("MotomanHardware"), "Deactivating ...please wait...");
+    RCLCPP_WARN(rclcpp::get_logger("MotomanHardware"), "Deactivating ...please wait...");
 
     if(!send_tcp_request(simple_message::SmCommandType::ROS_CMD_STOP_RT_MODE))
     {
         RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "Error in TCP request. ERRNO: %d", errno);
-        return CallbackReturn::FAILURE;
+        return CallbackReturn::ERROR;
     }
+
+    _is_deactivated = true;
 
     RCLCPP_INFO(rclcpp::get_logger("MotomanHardware"), "Successfully deactivated!");
     return hardware_interface::CallbackReturn::SUCCESS;
@@ -298,8 +314,15 @@ hardware_interface::CallbackReturn MotomanHardware::on_activate(const rclcpp_lif
 
 hardware_interface::CallbackReturn MotomanHardware::on_shutdown(const rclcpp_lifecycle::State & /* previous_state */)
 {
-    RCLCPP_INFO(rclcpp::get_logger("MotomanHardware"), "Shutdown Hardware Interface ...");
+    if(!_is_deactivated) {MotomanHardware::on_deactivate(this->get_state());}
 
+    // Remove fastdds publisher
+    if (state_data_writer != nullptr) _state_publisher->delete_datawriter(state_data_writer);
+    if (_state_publisher != nullptr) _state_domain_participant->delete_publisher(_state_publisher);
+    if (_state_topic != nullptr) _state_domain_participant->delete_topic(_state_topic);
+    eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(_state_domain_participant);
+
+    RCLCPP_WARN(rclcpp::get_logger("MotomanHardware"), "Shutdown Hardware Interface ...");
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 

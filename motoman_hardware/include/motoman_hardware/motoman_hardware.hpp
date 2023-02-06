@@ -40,6 +40,9 @@ class MotomanHardware : public hardware_interface::SystemInterface
 {
 public:
     RCLCPP_SHARED_PTR_DEFINITIONS(MotomanHardware)
+
+    // Creating the default constructor explicitly
+    MotomanHardware();
     
     //UNCONFIGURED (on_init, on_cleanup):
     //Hardware is initialized but communication is not started and therefore no interface is available.
@@ -101,6 +104,8 @@ public:
 private:
 
     int send_tcp_request(simple_message::SmCommandType command);
+    void shutdown_helper();
+    bool _is_deactivated = false;
 
     std::vector<double> hw_commands;
     std::vector<double> hw_pos_cmd;
