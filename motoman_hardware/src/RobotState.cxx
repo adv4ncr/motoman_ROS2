@@ -36,15 +36,18 @@ using namespace eprosima::fastcdr::exception;
 
 motoman_description::msg::RobotState::RobotState()
 {
-    // m_state com.eprosima.idl.parser.typecode.PrimitiveTypeCode@e056f20
+    // m_state com.eprosima.idl.parser.typecode.PrimitiveTypeCode@6580cfdd
     m_state = 0;
-    // m_code com.eprosima.idl.parser.typecode.PrimitiveTypeCode@10e41621
+    // m_code com.eprosima.idl.parser.typecode.PrimitiveTypeCode@7e0b85f9
     m_code = 0;
+    // m_axs_sync_state com.eprosima.idl.parser.typecode.ArrayTypeCode@63355449
+    memset(&m_axs_sync_state, 0, (8) * 1);
 
 }
 
 motoman_description::msg::RobotState::~RobotState()
 {
+
 
 }
 
@@ -53,6 +56,7 @@ motoman_description::msg::RobotState::RobotState(
 {
     m_state = x.m_state;
     m_code = x.m_code;
+    m_axs_sync_state = x.m_axs_sync_state;
 }
 
 motoman_description::msg::RobotState::RobotState(
@@ -60,6 +64,7 @@ motoman_description::msg::RobotState::RobotState(
 {
     m_state = x.m_state;
     m_code = x.m_code;
+    m_axs_sync_state = std::move(x.m_axs_sync_state);
 }
 
 motoman_description::msg::RobotState& motoman_description::msg::RobotState::operator =(
@@ -68,6 +73,7 @@ motoman_description::msg::RobotState& motoman_description::msg::RobotState::oper
 
     m_state = x.m_state;
     m_code = x.m_code;
+    m_axs_sync_state = x.m_axs_sync_state;
 
     return *this;
 }
@@ -78,6 +84,7 @@ motoman_description::msg::RobotState& motoman_description::msg::RobotState::oper
 
     m_state = x.m_state;
     m_code = x.m_code;
+    m_axs_sync_state = std::move(x.m_axs_sync_state);
 
     return *this;
 }
@@ -86,7 +93,7 @@ bool motoman_description::msg::RobotState::operator ==(
         const RobotState& x) const
 {
 
-    return (m_state == x.m_state && m_code == x.m_code);
+    return (m_state == x.m_state && m_code == x.m_code && m_axs_sync_state == x.m_axs_sync_state);
 }
 
 bool motoman_description::msg::RobotState::operator !=(
@@ -107,6 +114,9 @@ size_t motoman_description::msg::RobotState::getMaxCdrSerializedSize(
     current_alignment += 1 + eprosima::fastcdr::Cdr::alignment(current_alignment, 1);
 
 
+    current_alignment += ((8) * 1) + eprosima::fastcdr::Cdr::alignment(current_alignment, 1);
+
+
 
     return current_alignment - initial_alignment;
 }
@@ -125,6 +135,11 @@ size_t motoman_description::msg::RobotState::getCdrSerializedSize(
     current_alignment += 1 + eprosima::fastcdr::Cdr::alignment(current_alignment, 1);
 
 
+    if ((8) > 0)
+    {
+        current_alignment += ((8) * 1) + eprosima::fastcdr::Cdr::alignment(current_alignment, 1);
+    }
+
 
     return current_alignment - initial_alignment;
 }
@@ -135,6 +150,8 @@ void motoman_description::msg::RobotState::serialize(
 
     scdr << m_state;
     scdr << m_code;
+    scdr << m_axs_sync_state;
+
 
 }
 
@@ -144,6 +161,8 @@ void motoman_description::msg::RobotState::deserialize(
 
     dcdr >> m_state;
     dcdr >> m_code;
+    dcdr >> m_axs_sync_state;
+
 }
 
 /*!
@@ -151,7 +170,7 @@ void motoman_description::msg::RobotState::deserialize(
  * @param _state New value for member state
  */
 void motoman_description::msg::RobotState::state(
-        int8_t _state)
+        uint8_t _state)
 {
     m_state = _state;
 }
@@ -160,7 +179,7 @@ void motoman_description::msg::RobotState::state(
  * @brief This function returns the value of member state
  * @return Value of member state
  */
-int8_t motoman_description::msg::RobotState::state() const
+uint8_t motoman_description::msg::RobotState::state() const
 {
     return m_state;
 }
@@ -169,7 +188,7 @@ int8_t motoman_description::msg::RobotState::state() const
  * @brief This function returns a reference to member state
  * @return Reference to member state
  */
-int8_t& motoman_description::msg::RobotState::state()
+uint8_t& motoman_description::msg::RobotState::state()
 {
     return m_state;
 }
@@ -179,7 +198,7 @@ int8_t& motoman_description::msg::RobotState::state()
  * @param _code New value for member code
  */
 void motoman_description::msg::RobotState::code(
-        int8_t _code)
+        uint8_t _code)
 {
     m_code = _code;
 }
@@ -188,7 +207,7 @@ void motoman_description::msg::RobotState::code(
  * @brief This function returns the value of member code
  * @return Value of member code
  */
-int8_t motoman_description::msg::RobotState::code() const
+uint8_t motoman_description::msg::RobotState::code() const
 {
     return m_code;
 }
@@ -197,11 +216,48 @@ int8_t motoman_description::msg::RobotState::code() const
  * @brief This function returns a reference to member code
  * @return Reference to member code
  */
-int8_t& motoman_description::msg::RobotState::code()
+uint8_t& motoman_description::msg::RobotState::code()
 {
     return m_code;
 }
 
+/*!
+ * @brief This function copies the value in member axs_sync_state
+ * @param _axs_sync_state New value to be copied in member axs_sync_state
+ */
+void motoman_description::msg::RobotState::axs_sync_state(
+        const std::array<uint8_t, 8>& _axs_sync_state)
+{
+    m_axs_sync_state = _axs_sync_state;
+}
+
+/*!
+ * @brief This function moves the value in member axs_sync_state
+ * @param _axs_sync_state New value to be moved in member axs_sync_state
+ */
+void motoman_description::msg::RobotState::axs_sync_state(
+        std::array<uint8_t, 8>&& _axs_sync_state)
+{
+    m_axs_sync_state = std::move(_axs_sync_state);
+}
+
+/*!
+ * @brief This function returns a constant reference to member axs_sync_state
+ * @return Constant reference to member axs_sync_state
+ */
+const std::array<uint8_t, 8>& motoman_description::msg::RobotState::axs_sync_state() const
+{
+    return m_axs_sync_state;
+}
+
+/*!
+ * @brief This function returns a reference to member axs_sync_state
+ * @return Reference to member axs_sync_state
+ */
+std::array<uint8_t, 8>& motoman_description::msg::RobotState::axs_sync_state()
+{
+    return m_axs_sync_state;
+}
 
 size_t motoman_description::msg::RobotState::getKeyMaxCdrSerializedSize(
         size_t current_alignment)
@@ -222,7 +278,7 @@ void motoman_description::msg::RobotState::serializeKey(
         eprosima::fastcdr::Cdr& scdr) const
 {
     (void) scdr;
-      
+       
 }
 
 

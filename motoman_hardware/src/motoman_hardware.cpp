@@ -160,6 +160,10 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
         return hardware_interface::CallbackReturn::FAILURE;
     }
 
+    // Set file descriptor
+    pfds[0].fd = udp_socket_fd;
+
+
     // set udp server struct
     udp_servaddr.sin_family = AF_INET;
     inet_pton(AF_INET, ip_address.c_str(), &(udp_servaddr.sin_addr.s_addr));
@@ -183,10 +187,10 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
     tcp_servaddr.sin_port = htons(TCP_PORT_MOTION_COMMAND);
 
     // set timeout structs
-    tcp_timeout.tv_sec = TCP_TIMEOUT;
+    tcp_timeout.tv_sec = TCP_TIMEOUT_S;
     tcp_timeout.tv_nsec = 0;
     udp_timeout.tv_sec = 0;
-    udp_timeout.tv_nsec = UDP_TIMEOUT;
+    udp_timeout.tv_nsec = UDP_TIMEOUT_NS;
 
 
     // clear msgs
@@ -235,6 +239,7 @@ hardware_interface::CallbackReturn MotomanHardware::on_configure(const rclcpp_li
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 
+
 hardware_interface::CallbackReturn MotomanHardware::on_deactivate(const rclcpp_lifecycle::State & /* previous_state */)
 {
     RCLCPP_WARN(rclcpp::get_logger("MotomanHardware"), "Deactivating ...please wait...");
@@ -250,6 +255,7 @@ hardware_interface::CallbackReturn MotomanHardware::on_deactivate(const rclcpp_l
     RCLCPP_INFO(rclcpp::get_logger("MotomanHardware"), "Successfully deactivated!");
     return hardware_interface::CallbackReturn::SUCCESS;
 }
+
 
 hardware_interface::CallbackReturn MotomanHardware::on_activate(const rclcpp_lifecycle::State & /* previous_state */)
 {
@@ -327,14 +333,18 @@ hardware_interface::CallbackReturn MotomanHardware::on_shutdown(const rclcpp_lif
 }
 
 
-hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
+hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*time*/, const rclcpp::Duration & period)
 {
-    // fd_set server_rfds;
-    // FD_ZERO(&server_rfds);
-    // FD_SET(udp_socket_fd, &server_rfds);
+    //fd_set server_rfds;
+    //FD_ZERO(&server_rfds);
+    //FD_SET(udp_socket_fd, &server_rfds);
 
+    // pfds[0].events = POLL_IN;
+    
     // // block while waiting for response or timeout
-    // retval = pselect(udp_socket_fd+1, &server_rfds, NULL, NULL, &udp_timeout, NULL);
+    // //retval = pselect(udp_socket_fd+1, &server_rfds, NULL, NULL, &udp_timeout, NULL);
+    
+    // retval = ppoll(pfds, 1, &udp_timeout, NULL);
     // if(retval == -1)
     // {
     //     RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "[UDP] Recv failed. ERRNO: %d", errno);
@@ -343,11 +353,23 @@ hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*tim
     // else if(retval == 0)
     // {
     //     // Timeout
-    //     RCLCPP_WARN(rclcpp::get_logger("MotomanHardware"), "[UDP] Recv timeout %ld ns", udp_timeout.tv_nsec);
+    //     RCLCPP_WARN(rclcpp::get_logger("MotomanHardware"), "[UDP] Recv timeout %ld ns. NW_S_CNTR: %ld", udp_timeout.tv_nsec, _nw_success_counter);
     //     //return hardware_interface::return_type::ERROR;
     // }
+    // else 
+    // {
+    //     _nw_success_counter++;
+    // }
 
-    //RCLCPP_INFO(rclcpp::get_logger("MotomanHardware"), "[UDP] Recv period: %ld ns", period.nanoseconds());
+    // if(pfds[0].revents != POLL_IN)
+    // {
+    //     RCLCPP_WARN(rclcpp::get_logger("MotomanHardware"), "[UDP] got event: %d", pfds[0].revents);
+    // }
+    
+    if(period.nanoseconds() > 4500000)
+    {
+        RCLCPP_INFO(rclcpp::get_logger("MotomanHardware"), "[HW] read period: %ld ns", period.nanoseconds());
+    }
 
     // clear message
     memset(&rtMsgRecv_, 0, RT_MSG_STATE_SIZE);
@@ -377,6 +399,8 @@ hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*tim
     // Publish controller state and code
     state_msg.state(rtMsgRecv_.header.msg_state);
     state_msg.code(rtMsgRecv_.header.msg_code);
+    memcpy(_msg_ax_state.data(), rtMsgRecv_.body.state[0].dbg_axs_sync_state, _msg_ax_state.size()*sizeof(uint8_t));
+    state_msg.axs_sync_state(_msg_ax_state);
     state_data_writer->write(&state_msg);
 
     // Set position and velocity to ROS2 control pipeline

@@ -130,7 +130,7 @@ def generate_launch_description():
     robot_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=['StaticTestController', '--controller-manager', [namespace, 'controller_manager']],
+        arguments=['StaticTestController', '--inactive', '--controller-manager', [namespace, 'controller_manager']],
         namespace=namespace,
     )
 

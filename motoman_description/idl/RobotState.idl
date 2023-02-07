@@ -4,8 +4,9 @@ module motoman_description
     {
         struct RobotState
         {
-            int8 state;
-            int8 code;
+            octet state;
+            octet code;
+            octet axs_sync_state[8];
         };
     };
 };

@@ -144,7 +144,7 @@ namespace motoman_hardware::udp_rt_message
 		enum RtMsgState msg_state;
 		enum RtMsgCode msg_code;
 		unsigned char msg_sequence;
-		//unsigned char _;
+		unsigned char _;
 	} __attribute__((packed, aligned(4)));
 	typedef struct _RtMsgHeader RtMsgHeader;
 
@@ -161,6 +161,11 @@ namespace motoman_hardware::udp_rt_message
 		float pos_fb[RT_ROBOT_JOINTS_MAX];
 		float vel_set[RT_ROBOT_JOINTS_MAX];
 		float vel_fb[RT_ROBOT_JOINTS_MAX];
+
+		// Debug
+		unsigned char dbg_axs_sync_state[RT_ROBOT_JOINTS_MAX];
+		float dbg_loop_time;
+
 	} __attribute__((packed));
 	typedef struct _RtMsgBodyState RtMsgBodyState;
 

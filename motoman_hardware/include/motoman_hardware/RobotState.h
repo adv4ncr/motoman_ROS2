@@ -128,39 +128,64 @@ namespace motoman_description {
              * @param _state New value for member state
              */
             eProsima_user_DllExport void state(
-                    int8_t _state);
+                    uint8_t _state);
 
             /*!
              * @brief This function returns the value of member state
              * @return Value of member state
              */
-            eProsima_user_DllExport int8_t state() const;
+            eProsima_user_DllExport uint8_t state() const;
 
             /*!
              * @brief This function returns a reference to member state
              * @return Reference to member state
              */
-            eProsima_user_DllExport int8_t& state();
+            eProsima_user_DllExport uint8_t& state();
 
             /*!
              * @brief This function sets a value in member code
              * @param _code New value for member code
              */
             eProsima_user_DllExport void code(
-                    int8_t _code);
+                    uint8_t _code);
 
             /*!
              * @brief This function returns the value of member code
              * @return Value of member code
              */
-            eProsima_user_DllExport int8_t code() const;
+            eProsima_user_DllExport uint8_t code() const;
 
             /*!
              * @brief This function returns a reference to member code
              * @return Reference to member code
              */
-            eProsima_user_DllExport int8_t& code();
+            eProsima_user_DllExport uint8_t& code();
 
+            /*!
+             * @brief This function copies the value in member axs_sync_state
+             * @param _axs_sync_state New value to be copied in member axs_sync_state
+             */
+            eProsima_user_DllExport void axs_sync_state(
+                    const std::array<uint8_t, 8>& _axs_sync_state);
+
+            /*!
+             * @brief This function moves the value in member axs_sync_state
+             * @param _axs_sync_state New value to be moved in member axs_sync_state
+             */
+            eProsima_user_DllExport void axs_sync_state(
+                    std::array<uint8_t, 8>&& _axs_sync_state);
+
+            /*!
+             * @brief This function returns a constant reference to member axs_sync_state
+             * @return Constant reference to member axs_sync_state
+             */
+            eProsima_user_DllExport const std::array<uint8_t, 8>& axs_sync_state() const;
+
+            /*!
+             * @brief This function returns a reference to member axs_sync_state
+             * @return Reference to member axs_sync_state
+             */
+            eProsima_user_DllExport std::array<uint8_t, 8>& axs_sync_state();
 
             /*!
              * @brief This function returns the maximum serialized size of an object
@@ -221,8 +246,9 @@ namespace motoman_description {
 
         private:
 
-            int8_t m_state;
-            int8_t m_code;
+            uint8_t m_state;
+            uint8_t m_code;
+            std::array<uint8_t, 8> m_axs_sync_state;
         };
     } // namespace msg
 } // namespace motoman_description

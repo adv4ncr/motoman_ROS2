@@ -14,6 +14,7 @@
 
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <poll.h>
 #include <arpa/inet.h>
 
 #include "motoman_hardware/simple_message.hpp"
@@ -33,8 +34,8 @@
 namespace motoman_hardware
 {
 
-#define TCP_TIMEOUT 1 // in s
-#define UDP_TIMEOUT 500000 // in ns
+#define TCP_TIMEOUT_S 1 // in s
+#define UDP_TIMEOUT_NS 500000 // in ns = 0.5 ms
 
 class MotomanHardware : public hardware_interface::SystemInterface
 {
@@ -114,7 +115,8 @@ private:
     std::vector<double> hw_vel_set;
     std::vector<double> hw_vel_fb;
 
-    std::vector<double> hw_state_msg;
+    bool init_hw_commands;
+    size_t joints_size;
 
     // State msg publisher
 
@@ -125,14 +127,11 @@ private:
     eprosima::fastdds::dds::DomainParticipant* _state_domain_participant = nullptr;
     eprosima::fastdds::dds::TypeSupport _state_type;
 
-
-    bool init_hw_commands;
-    size_t joints_size;
-
     // RT message variables
     udp_rt_message::RtMsg rtMsgRecv_, rtMsgSend_;
     udp_rt_message::RtMsgState rtMsgState_;
     udp_rt_message::RtMsgCode rtMsgCode_;
+    std::array<uint8_t, 8> _msg_ax_state;
 
     // Network communication
     struct sockaddr_in udp_servaddr, tcp_servaddr;
@@ -143,6 +142,8 @@ private:
     // Network file descriptor handling
     //fd_set server_rfds;
     struct timespec tcp_timeout, udp_timeout;
+    struct pollfd pfds[1];
+    uint64_t _nw_success_counter = 0;
     int retval;
 
     // Network send /recv bytes
