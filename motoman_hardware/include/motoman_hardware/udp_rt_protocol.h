@@ -144,7 +144,7 @@ namespace motoman_hardware::udp_rt_message
 		enum RtMsgState msg_state;
 		enum RtMsgCode msg_code;
 		unsigned char msg_sequence;
-		unsigned char _;
+		//unsigned char _;
 	} __attribute__((packed, aligned(4)));
 	typedef struct _RtMsgHeader RtMsgHeader;
 
@@ -180,7 +180,7 @@ namespace motoman_hardware::udp_rt_message
 	{
 		RtMsgHeader header;
 		union RtMsgBody body;
-	} __attribute__((packed));
+	} __attribute__((packed, aligned(4)));
 	typedef struct _RtMsg RtMsg;
 	
 	// struct _RtMsgCommand
@@ -210,6 +210,7 @@ namespace motoman_hardware::udp_rt_message
 static_assert(sizeof(enum RtMsgState) == 1, "RtMsgState must be 1");
 static_assert(sizeof(enum RtMsgCode) == 1, "RtMsgCode must be 1");
 static_assert(sizeof(RtMsgHeader) == 4, "RtMsgHeader must be 4");
+static_assert(sizeof(RtMsg) == RT_MSG_STATE_SIZE, "RtMsg not aligned");
 
 #ifdef __cplusplus
 } // motoman_hardware::udp_rt_message

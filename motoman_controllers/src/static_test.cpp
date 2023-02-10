@@ -115,58 +115,77 @@ controller_interface::CallbackReturn StaticTest::on_activate(
 	rt_command_ptr_ = realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>>(nullptr);
 
 	// number of axis validation
-	if(axes != state_interfaces_.size())
+	if(AXES != state_interfaces_.size())
 	{
 		RCLCPP_ERROR(
 			get_node()->get_logger(), "Expected %d state interfaces, got %zu!",
-			axes, state_interfaces_.size());
+			AXES, state_interfaces_.size());
 		return controller_interface::CallbackReturn::ERROR;
 	}
 
 
 	// check current position
-	for (auto index = 0u; index < 6; ++index)
-	{
-		auto pos = state_interfaces_[index].get_value();
-		auto name = state_interfaces_[index].get_name();
-		RCLCPP_INFO(rclcpp::get_logger("StaticTest"), "[STATIC_TEST] state_interfaces_[%s]: %f", name.c_str(), pos);
-		start_values[index] = state_interfaces_[index].get_value();
-	}
+	// for (auto index = 0u; index < 6; ++index)
+	// {
+	// 	auto pos = state_interfaces_[index].get_value();
+	// 	auto name = state_interfaces_[index].get_name();
+	// 	RCLCPP_INFO(rclcpp::get_logger("StaticTest"), "[STATIC_TEST] state_interfaces_[%s]: %f", name.c_str(), pos);
+	// 	start_values[index] = state_interfaces_[index].get_value();
+	// }
 
 
 
 	// ------------------ MOTION TEST ------------------
-	// using cosinus wave
 	
-	// intit variables
-	increment = 0.0;
-
-	// set scaling factors
-    for(_axs = 0; _axs < axes; _axs++)
-    {
-        factors[_axs] = maxIncrement[_axs] / (step*pulseToRad[_axs]) * scale_factor;
-        //RCLCPP_INFO(rclcpp::get_logger("StaticTest"), "[STATIC_TEST] factor[%d]: %lf", _axs, factors[_axs]);
-    }
-
-	// calculate values
-	for(auto _i = 0u; _i < values_size; _i++)
+	// Set time values
+	double _t_inc = 0;
+	for(auto i = 0u; i<t_values.size(); i++)
 	{
-        for(_axs = 0; _axs < axes; _axs++)
-        {
-		    values[_i][_axs] = (-cos(increment)+1) * factors[_axs];
-        }
-        increment += step;
+		t_values[i] = _t_inc;
+		_t_inc += 1/250.;
 	}
 
+	// Set axis values
+
+	constexpr double _p0 = 45 * M_PI/180.;
+	constexpr double _v = 25 * M_PI/180.;
+	constexpr double _a = 0;
+	motion_generators::Ramp gen(_p0, _v, _a);
+	
+	for(auto i = 0u; i<ax_pos.size(); i++)
+	{
+		gen.get_values(t_values[i], ax_pos[i], ax_vel[i], ax_acc[i]);
+	}
+	
+	// // intit variables
+	// increment = 0.0;
+
+	// // set scaling factors
+    // for(_axs = 0; _axs < axes; _axs++)
+    // {
+    //     factors[_axs] = maxIncrement[_axs] / (step*pulseToRad[_axs]) * scale_factor;
+    //     //RCLCPP_INFO(rclcpp::get_logger("StaticTest"), "[STATIC_TEST] factor[%d]: %lf", _axs, factors[_axs]);
+    // }
+
+	// // calculate values
+	// for(auto _i = 0u; _i < values_size; _i++)
+	// {
+    //     for(_axs = 0; _axs < axes; _axs++)
+    //     {
+	// 	    values[_i][_axs] = (-cos(increment)+1) * factors[_axs];
+    //     }
+    //     increment += step;
+	// }
 
 
-    //get max values
-    for(_axs = 0; _axs < axes ; _axs++)
-    {
-        long pos = lround(M_PI_2/step);
-        double _slope = (values[pos+1][_axs] - values[pos][_axs])*pulseToRad[_axs];
-        RCLCPP_INFO(rclcpp::get_logger("StaticTest"), "[STATIC_TEST] maxIncrement[%d]: %lf", _axs, _slope);
-    }
+
+    // //get max values
+    // for(_axs = 0; _axs < axes ; _axs++)
+    // {
+    //     long pos = lround(M_PI_2/step);
+    //     double _slope = (values[pos+1][_axs] - values[pos][_axs])*pulseToRad[_axs];
+    //     RCLCPP_INFO(rclcpp::get_logger("StaticTest"), "[STATIC_TEST] maxIncrement[%d]: %lf", _axs, _slope);
+    // }
 
 
 
@@ -182,23 +201,23 @@ controller_interface::return_type StaticTest::update(const rclcpp::Time & /*time
 
 
 	// Set signal to hardware interface
-	if(counter < values_size)
+	if(_cntr < t_values.size())
 	{
-		for (_axs = 0; _axs < axes; _axs++)
+		for (_axs = 0; _axs < AXES; _axs++)
 		{
-			if(_axs == 5) // set test axis
+			if(_axs == AX_TEST) // set test axis
 			{
-				command_interfaces_[_axs].set_value(start_values[_axs] + values[counter][_axs]);
+				command_interfaces_[_axs].set_value(ax_pos[_cntr]);
 			}
 		}
-		counter++;
+		_cntr++;
 	}
-	else if(_sets < 5)
-	{
-		counter = 0;
-		_sets++;
-		RCLCPP_INFO(get_node()->get_logger(), "Set set %d", _sets);
-	}
+	// else if(_sets < 5)
+	// {
+	// 	counter = 0;
+	// 	_sets++;
+	// 	RCLCPP_INFO(get_node()->get_logger(), "Set set %d", _sets);
+	// }
 
 
 	// if ((*joint_commands)->data.size() != command_interfaces_.size())

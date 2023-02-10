@@ -17,6 +17,8 @@
 
 #include "forward_command_controller/forward_command_controller.hpp"
 
+#include "motoman_controllers/motion_generators.hpp"
+
 namespace motoman_controllers
 {
 using CmdType = std_msgs::msg::Float64MultiArray;
@@ -70,45 +72,30 @@ private:
     std::vector<std::string> state_interface_types;
     std::vector<std::string> joint_names;
 
-    const float pulseToRad[8] =
-    {
-        153054.453125,
-        153054.453125,
-        134496.984375,
-        92770.187500,
-        92770.187500,
-        92770.187500,
-        0.000000,
-        0.000000
-    };
+    // #define period_len 500
+    // #define values_size period_len*3+1
+    // #define scale_factor 0.5
 
-    const uint32_t maxIncrement[8] = 
-    {
-        1389,
-        1389,
-        1690,
-        1165,
-        1619,
-        1619,
-        0,
-        0
-    };
+    // double factors[axes];
+    // double values[values_size][axes];
 
-    #define period_len 500
-    #define values_size period_len*3+1
-    #define axes 6
-    #define scale_factor 0.5
+	// const double step = M_PI*2/period_len;
+	// double increment;
 
-    double factors[axes];
-    double values[values_size][axes];
-
-	const double step = M_PI*2/period_len;
-	double increment;
+    // double start_values[axes];
+    // u_int32_t _sets = 0;
+    #define AXES 6
+    #define AX_TEST 5
     uint8_t _axs;
+    u_int32_t _cntr = 0;
 
-    double start_values[axes];
-    u_int32_t counter = 0;
-    u_int32_t _sets = 0;
+    #define time_span 5    // [s]
+
+    std::array<double, 250*time_span> t_values;
+    std::array<double, 250*time_span> ax_pos;
+    std::array<double, 250*time_span> ax_vel;
+    std::array<double, 250*time_span> ax_acc;
+
 
 };
 } // namespace motoman_controllers

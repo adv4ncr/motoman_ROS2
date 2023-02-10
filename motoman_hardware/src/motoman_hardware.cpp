@@ -162,6 +162,7 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
 
     // Set file descriptor
     pfds[0].fd = udp_socket_fd;
+    pfds[0].events = POLL_IN;
 
 
     // set udp server struct
@@ -201,6 +202,7 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
 
     return hardware_interface::CallbackReturn::SUCCESS;
 }
+
 
 hardware_interface::CallbackReturn MotomanHardware::on_cleanup(const rclcpp_lifecycle::State & /* previous_state */)
 {
@@ -333,16 +335,15 @@ hardware_interface::CallbackReturn MotomanHardware::on_shutdown(const rclcpp_lif
 }
 
 
-hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*time*/, const rclcpp::Duration & period)
+hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*time*/, const rclcpp::Duration & /* period */)
 {
-    //fd_set server_rfds;
-    //FD_ZERO(&server_rfds);
-    //FD_SET(udp_socket_fd, &server_rfds);
-
-    // pfds[0].events = POLL_IN;
     
-    // // block while waiting for response or timeout
-    // //retval = pselect(udp_socket_fd+1, &server_rfds, NULL, NULL, &udp_timeout, NULL);
+    // fd_set server_rfds;
+    // FD_ZERO(&server_rfds);
+    // FD_SET(udp_socket_fd, &server_rfds);
+    
+    // block while waiting for response or timeout
+    //retval = pselect(udp_socket_fd+1, &server_rfds, NULL, NULL, &udp_timeout, NULL);
     
     // retval = ppoll(pfds, 1, &udp_timeout, NULL);
     // if(retval == -1)
@@ -354,7 +355,8 @@ hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*tim
     // {
     //     // Timeout
     //     RCLCPP_WARN(rclcpp::get_logger("MotomanHardware"), "[UDP] Recv timeout %ld ns. NW_S_CNTR: %ld", udp_timeout.tv_nsec, _nw_success_counter);
-    //     //return hardware_interface::return_type::ERROR;
+    //     _nw_miss_counter++;
+    //     if(_nw_miss_counter > 2500) return hardware_interface::return_type::ERROR;
     // }
     // else 
     // {
@@ -366,10 +368,10 @@ hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*tim
     //     RCLCPP_WARN(rclcpp::get_logger("MotomanHardware"), "[UDP] got event: %d", pfds[0].revents);
     // }
     
-    if(period.nanoseconds() > 4500000)
-    {
-        RCLCPP_INFO(rclcpp::get_logger("MotomanHardware"), "[HW] read period: %ld ns", period.nanoseconds());
-    }
+    // if(period.nanoseconds() > 4500000)
+    // {
+    //     RCLCPP_INFO(rclcpp::get_logger("MotomanHardware"), "[HW] read period: %ld ns", period.nanoseconds());
+    // }
 
     // clear message
     memset(&rtMsgRecv_, 0, RT_MSG_STATE_SIZE);
