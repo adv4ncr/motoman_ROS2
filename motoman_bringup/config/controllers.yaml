@@ -46,7 +46,7 @@ StaticTestController:
     interface_name: position
     state_interfaces:
       # - position
-      - pos_fb
+      - pos_fdb
 
 joint_trajectory_controller:
   ros__parameters:

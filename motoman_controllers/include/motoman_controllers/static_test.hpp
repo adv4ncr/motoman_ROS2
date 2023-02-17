@@ -85,17 +85,22 @@ private:
     // double start_values[axes];
     // u_int32_t _sets = 0;
     #define AXES 6
-    #define AX_TEST 5
+    #define AX_TEST 0 // [0..5]
     uint8_t _axs;
-    u_int32_t _cntr = 0;
+    u_int32_t _counter_val = 0, _counter_val_back = 0, _counter_axs = 0;
 
-    #define time_span 5    // [s]
+    #define time_span 2    // [s]
 
     std::array<double, 250*time_span> t_values;
     std::array<double, 250*time_span> ax_pos;
     std::array<double, 250*time_span> ax_vel;
     std::array<double, 250*time_span> ax_acc;
 
+    std::vector<double> back_to_init_pos;
+
+    // enum DriveMode {NONE, SINGLE, ALL, SEQUENCE};
+    // DriveMode drive_mode = DriveMode::NONE;
+    // bool state_entry = true;
 
 };
 } // namespace motoman_controllers

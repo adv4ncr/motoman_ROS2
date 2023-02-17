@@ -41,19 +41,31 @@
                 <!-- <param name="min">-1</param> -->
                 <!-- <param name="max">1</param> -->
                 </command_interface>
-                <state_interface name="position">
+                <state_interface name="position"> <!--pos_set-->
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="velocity">
+                <state_interface name="velocity"> <!--vel_set-->
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="pos_snd"> <!--pos sent to robot-->
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="pos_cmd">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_fb">
+                <state_interface name="pos_fdb">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="vel_fb">
+                <state_interface name="vel_cmd">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="vel_fdb">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="acc_cmd">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="acc_set">
                     <param name="initial_value">0.0</param>
                 </state_interface>
             </joint>
@@ -62,19 +74,31 @@
                 <!-- <param name="min">-1</param> -->
                 <!-- <param name="max">1</param> -->
                 </command_interface>
-                <state_interface name="position">
+                <state_interface name="position"> <!--pos_set-->
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="velocity">
+                <state_interface name="velocity"> <!--vel_set-->
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="pos_snd"> <!--pos sent to robot-->
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="pos_cmd">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_fb">
+                <state_interface name="pos_fdb">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="vel_fb">
+                <state_interface name="vel_cmd">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="vel_fdb">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="acc_cmd">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="acc_set">
                     <param name="initial_value">0.0</param>
                 </state_interface>
             </joint>
@@ -83,19 +107,31 @@
                 <!-- <param name="min">-1</param> -->
                 <!-- <param name="max">1</param> -->
                 </command_interface>
-                <state_interface name="position">
+                <state_interface name="position"> <!--pos_set-->
                     <param name="initial_value">0.7</param>
                 </state_interface>
-                <state_interface name="velocity">
+                <state_interface name="velocity"> <!--vel_set-->
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="pos_snd"> <!--pos sent to robot-->
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="pos_cmd">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_fb">
+                <state_interface name="pos_fdb">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="vel_fb">
+                <state_interface name="vel_cmd">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="vel_fdb">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="acc_cmd">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="acc_set">
                     <param name="initial_value">0.0</param>
                 </state_interface>
             </joint>
@@ -104,19 +140,31 @@
                 <!-- <param name="min">-1</param> -->
                 <!-- <param name="max">1</param> -->
                 </command_interface>
-                <state_interface name="position">
+                <state_interface name="position"> <!--pos_set-->
                     <param name="initial_value">0.7</param>
                 </state_interface>
-                <state_interface name="velocity">
+                <state_interface name="velocity"> <!--vel_set-->
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="pos_snd"> <!--pos sent to robot-->
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="pos_cmd">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_fb">
+                <state_interface name="pos_fdb">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="vel_fb">
+                <state_interface name="vel_cmd">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="vel_fdb">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="acc_cmd">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="acc_set">
                     <param name="initial_value">0.0</param>
                 </state_interface>
             </joint>
@@ -125,19 +173,31 @@
                 <!-- <param name="min">-1</param> -->
                 <!-- <param name="max">1</param> -->
                 </command_interface>
-                <state_interface name="position">
+                <state_interface name="position"> <!--pos_set-->
                     <param name="initial_value">0.7</param>
                 </state_interface>
-                <state_interface name="velocity">
+                <state_interface name="velocity"> <!--vel_set-->
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="pos_snd"> <!--pos sent to robot-->
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="pos_cmd">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_fb">
+                <state_interface name="pos_fdb">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="vel_fb">
+                <state_interface name="vel_cmd">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="vel_fdb">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="acc_cmd">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="acc_set">
                     <param name="initial_value">0.0</param>
                 </state_interface>
             </joint>
@@ -146,19 +206,31 @@
                 <!-- <param name="min">-1</param> -->
                 <!-- <param name="max">1</param> -->
                 </command_interface>
-                <state_interface name="position">
+                <state_interface name="position"> <!--pos_set-->
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="velocity">
+                <state_interface name="velocity"> <!--vel_set-->
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="pos_snd"> <!--pos sent to robot-->
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="pos_cmd">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_fb">
+                <state_interface name="pos_fdb">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="vel_fb">
+                <state_interface name="vel_cmd">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="vel_fdb">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="acc_cmd">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="acc_set">
                     <param name="initial_value">0.0</param>
                 </state_interface>
             </joint>

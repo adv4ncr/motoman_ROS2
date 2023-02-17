@@ -69,13 +69,18 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
     
     // Set current joint size
     joints_size = info_.joints.size();
-
+    
     hw_commands.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
+    hw_cmd_initial.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
+    hw_pos_snd.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
     hw_pos_cmd.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
     hw_pos_set.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
     hw_pos_fb.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
+    hw_vel_cmd.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
     hw_vel_set.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
     hw_vel_fb.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
+    hw_acc_cmd.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
+    hw_acc_set.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
     //hw_state_msg.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
 
     // Validate the udp_rt_protocol parameters
@@ -88,6 +93,7 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
 
     // Set current position as first hardware command
     init_hw_commands = false;
+    initial_controller_commands = false;
 
     // check configuration
     for (const hardware_interface::ComponentInfo & joint : info_.joints)
@@ -269,11 +275,15 @@ hardware_interface::CallbackReturn MotomanHardware::on_activate(const rclcpp_lif
         if (std::isnan(hw_pos_set[i]))
         {
             hw_commands[i] = 0;
+            hw_pos_snd[i] = 0;
             hw_pos_cmd[i] = 0;
             hw_pos_set[i] = 0;
             hw_pos_fb[i] = 0;
+            hw_vel_cmd[i] = 0;
             hw_vel_set[i] = 0;
             hw_vel_fb[i] = 0;
+            hw_acc_cmd[i] = 0;
+            hw_acc_set[i] = 0;
             //hw_state_msg[i] = 0;
         }
     }
@@ -388,7 +398,7 @@ hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*tim
     if(rtMsgState_ != rtMsgRecv_.header.msg_state)
     {
         rtMsgState_ = rtMsgRecv_.header.msg_state;
-        RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "Robot STATE: %d", rtMsgState_);
+        RCLCPP_WARN(rclcpp::get_logger("MotomanHardware"), "Robot STATE: %d", rtMsgState_);
     }
 
     // Read current code
@@ -408,19 +418,24 @@ hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*tim
     // Set position and velocity to ROS2 control pipeline
     for(uint8_t i = 0; i < joints_size; i++)
     {
+        hw_pos_cmd[i] = rtMsgRecv_.body.state[0].pos_cmd[i];
         hw_pos_set[i] = rtMsgRecv_.body.state[0].pos_set[i];
         hw_pos_fb[i] = rtMsgRecv_.body.state[0].pos_fb[i];
+        hw_vel_cmd[i] = rtMsgRecv_.body.state[0].vel_cmd[i];
         hw_vel_set[i] = rtMsgRecv_.body.state[0].vel_set[i];
         hw_vel_fb[i] = rtMsgRecv_.body.state[0].vel_fb[i];
+        hw_acc_cmd[i] = rtMsgRecv_.body.state[0].acc_cmd[i];
+        hw_acc_set[i] = rtMsgRecv_.body.state[0].acc_set[i];
     }
 
-    // #TODO remove in new controller software iteration
+    // #TODO read initial position in 'on_configure' and apply to the hw_commands
     // Init commands: (set current robot joit angles as first commands)
     if(!init_hw_commands)
     {
         for(uint8_t i = 0; i < joints_size; i++)
         {
             hw_commands[i] = rtMsgRecv_.body.state[0].pos_fb[i];
+            hw_cmd_initial[i] = rtMsgRecv_.body.state[0].pos_fb[i];
         }
         init_hw_commands = true;
     }
@@ -436,12 +451,26 @@ hardware_interface::return_type MotomanHardware::write(const rclcpp::Time & /*ti
     rtMsgSend_.header.msg_code = udp_rt_message::CODE_UNDEFINED; // #TODO
     rtMsgSend_.header.msg_sequence = rtMsgRecv_.header.msg_sequence;
 
+    // Set speed
+    rtMsgSend_.body.command[0].INC_FACTOR = ROBOT_INC_MAX_FACTOR;
+    rtMsgSend_.body.command[0].ACC_FACTOR = ROBOT_INC_ACC_FACTOR;
+
     for(uint8_t i = 0; i < joints_size; i++)
     {
         // #TODO handle multiple control groups
         rtMsgSend_.body.command[0].pos[i] = hw_commands[i];
-        hw_pos_cmd[i] = hw_commands[i];     // #TEST publish current command in state interface
+        hw_pos_snd[i] = hw_commands[i];     // #TEST publish current command in state interface
+    
+        // #TODO remove for new controller software
+        if(!initial_controller_commands && rtMsgSend_.body.command[0].pos[i] != hw_cmd_initial[i])
+        {
+            initial_controller_commands = true;
+            rtMsgSend_.header.msg_state = udp_rt_message::STATE_RUN_IN;
+        }
+
     }
+
+
 
     // std::string s;
     // for(auto v : command_msg_.body.joint_command_ex.joint_command_ex_data->command) s += std::to_string(v) + " ";
@@ -460,21 +489,39 @@ hardware_interface::return_type MotomanHardware::write(const rclcpp::Time & /*ti
 std::vector<hardware_interface::StateInterface> MotomanHardware::export_state_interfaces()
 {
     std::vector<hardware_interface::StateInterface> state_interfaces;
-    for (auto i = 0u; i < info_.joints.size(); i++)
+
+    // Main state interfaces
+    for (size_t i = 0; i < info_.joints.size(); i++)
     {
         state_interfaces.emplace_back(hardware_interface::StateInterface(
             info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_pos_set[i]));
         state_interfaces.emplace_back(hardware_interface::StateInterface(
             info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_vel_set[i]));
+
+        // Additional position state interfaces
+        state_interfaces.emplace_back(hardware_interface::StateInterface(
+            info_.joints[i].name, "pos_snd", &hw_pos_snd[i]));
         state_interfaces.emplace_back(hardware_interface::StateInterface(
             info_.joints[i].name, "pos_cmd", &hw_pos_cmd[i]));
         state_interfaces.emplace_back(hardware_interface::StateInterface(
-            info_.joints[i].name, "pos_fb", &hw_pos_fb[i]));
+            info_.joints[i].name, "pos_fdb", &hw_pos_fb[i]));
+
+        // Additional velocity state interfaces
         state_interfaces.emplace_back(hardware_interface::StateInterface(
-            info_.joints[i].name, "vel_fb", &hw_vel_fb[i]));
-        // state_interfaces.emplace_back(hardware_interface::StateInterface(
-        //     info_.joints[i].name, "state_msg", &hw_state_msg[i]));
+            info_.joints[i].name, "vel_cmd", &hw_vel_cmd[i]));
+        state_interfaces.emplace_back(hardware_interface::StateInterface(
+            info_.joints[i].name, "vel_fdb", &hw_vel_fb[i]));
+
+        // Additional acceleration state interfaces
+        state_interfaces.emplace_back(hardware_interface::StateInterface(
+            info_.joints[i].name, "acc_cmd", &hw_acc_cmd[i]));
+        state_interfaces.emplace_back(hardware_interface::StateInterface(
+            info_.joints[i].name, "acc_set", &hw_acc_set[i]));
     }
+    
+    // state_interfaces.emplace_back(hardware_interface::StateInterface(
+    //     info_.joints[i].name, "state_msg", &hw_state_msg[i]));
+    
 
     return state_interfaces;
 }
@@ -561,6 +608,21 @@ int MotomanHardware::send_tcp_request(simple_message::SmCommandType command)
     RCLCPP_WARN(rclcpp::get_logger("MotomanHardware"), "[TCP] Recv unknown result: %d", motionResp.body.motionReply.result);
     return -1;
 }
+
+
+// hardware_interface::return_type MotomanHardware::prepare_command_mode_switch(
+//     const std::vector<std::string> & /*start_interfaces*/, const std::vector<std::string> & /*stop_interfaces*/)
+// {
+//     RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "prepare_command_mode_switch");
+//     return hardware_interface::return_type::OK;
+// }
+
+// hardware_interface::return_type MotomanHardware::perform_command_mode_switch(
+//     const std::vector<std::string> & /*start_interfaces*/, const std::vector<std::string> & /*stop_interfaces*/)
+// {
+//     RCLCPP_ERROR(rclcpp::get_logger("MotomanHardware"), "perform_command_mode_switch");
+//     return hardware_interface::return_type::OK;
+// }
 
 
 } // namespace motoman_hardware

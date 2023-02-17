@@ -131,6 +131,7 @@ def generate_launch_description():
         package="controller_manager",
         executable="spawner",
         arguments=['StaticTestController', '--inactive', '--controller-manager', [namespace, 'controller_manager']],
+        #arguments=['StaticTestController', '--controller-manager', [namespace, 'controller_manager']],
         namespace=namespace,
     )
 

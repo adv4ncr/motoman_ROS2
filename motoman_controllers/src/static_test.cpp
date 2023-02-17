@@ -63,6 +63,57 @@ controller_interface::CallbackReturn StaticTest::on_configure(const rclcpp_lifec
 		return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
 	}
 
+
+
+	// ------------------ MOTION TEST ------------------
+	
+	// Set time values
+	double _t_inc = 0;
+	for(auto i = 0u; i<t_values.size(); i++)
+	{
+		t_values[i] = _t_inc;
+		_t_inc += 1/250.;
+	}
+
+	// Set axis values
+
+	constexpr double _p0 = 25 * M_PI/180.;
+	constexpr double _v0 = 0 * M_PI/180.;
+	constexpr double _a0 = 1250 * M_PI/180.;
+
+	motion_generators::Ramp gen(_p0, _v0, _a0);
+	//motion_generators::Sine gen(_p0, _v0, _a0);
+	//motion_generators::RealData gen("/home/ros/joint_states_wind_9_interpolated.csv");
+
+	
+	for(auto i = 0u; i<ax_pos.size(); i++)
+	{
+		gen.get_values(t_values[i], ax_pos[i], ax_vel[i], ax_acc[i]);
+	}
+
+
+
+	// Drive back to initial position 0
+	double _p0_back = ax_pos.back();
+	double _v_back = _p0_back > 0 ? -25 * M_PI/180. : 25 * M_PI/180.;
+	//std::cout << "p0: " << _p0_back << " v: " << _v_back << std::endl;
+	motion_generators::Ramp gen_back(_p0_back, _v_back, 0);
+	double t_back = 0, ax_pos_back, ax_vel_back, ax_acc_back;
+	for(;;)
+	{
+		if(_p0_back == 0.) break;
+		else if(back_to_init_pos.size() > 5000) break;
+		gen_back.get_values(t_back, ax_pos_back, ax_vel_back, ax_acc_back);
+		if((_p0_back>0 && ax_pos_back<0) || (_p0_back<0 && ax_pos_back>0) ) break;
+		back_to_init_pos.push_back(ax_pos_back);
+		t_back+=1/250.;
+	}
+	back_to_init_pos.push_back(0.);
+
+	RCLCPP_WARN(get_node()->get_logger(), "[DRIVE_BACK] trajectory size: %ld", back_to_init_pos.size());
+
+
+
 	return CallbackReturn::SUCCESS;
 }
 
@@ -135,28 +186,6 @@ controller_interface::CallbackReturn StaticTest::on_activate(
 
 
 
-	// ------------------ MOTION TEST ------------------
-	
-	// Set time values
-	double _t_inc = 0;
-	for(auto i = 0u; i<t_values.size(); i++)
-	{
-		t_values[i] = _t_inc;
-		_t_inc += 1/250.;
-	}
-
-	// Set axis values
-
-	constexpr double _p0 = 45 * M_PI/180.;
-	constexpr double _v = 25 * M_PI/180.;
-	constexpr double _a = 0;
-	motion_generators::Ramp gen(_p0, _v, _a);
-	
-	for(auto i = 0u; i<ax_pos.size(); i++)
-	{
-		gen.get_values(t_values[i], ax_pos[i], ax_vel[i], ax_acc[i]);
-	}
-	
 	// // intit variables
 	// increment = 0.0;
 
@@ -198,20 +227,67 @@ controller_interface::CallbackReturn StaticTest::on_activate(
 
 controller_interface::return_type StaticTest::update(const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
+	// // Drive sequentially
+	// if(_counter_axs < 6)
+	// {
+	// 	// Set signal to hardware interface
+	// 	if(_counter_val < t_values.size())
+	// 	{
+	// 		for (_axs = 0; _axs < AXES; _axs++)
+	// 		{
+	// 			if(_axs==_counter_axs) // set test axis
+	// 			{
+	// 				command_interfaces_[_axs].set_value(ax_pos[_counter_val]);
+	// 			}
+	// 		}
+	// 		_counter_val++;
+	// 	}
+	// 	// Drive back
+	// 	else if(_counter_val_back < back_to_init_pos.size())
+	// 	{
+	// 		for (_axs = 0; _axs < AXES; _axs++)
+	// 		{
+	// 			if(_axs==_counter_axs) // set test axis
+	// 			{
+	// 				command_interfaces_[_axs].set_value(back_to_init_pos[_counter_val_back]);
+	// 			}
+	// 		}
+	// 		_counter_val_back++;	
+	// 	}
+	// 	else
+	// 	{
+	// 		_counter_val = 0;
+	// 		_counter_val_back = 0;
+	// 		_counter_axs++;
+	// 	}
+	// }
+	// else
 
-
+	// Drive all at once 
+	
 	// Set signal to hardware interface
-	if(_cntr < t_values.size())
+	if(_counter_val < t_values.size())
 	{
 		for (_axs = 0; _axs < AXES; _axs++)
 		{
-			if(_axs == AX_TEST) // set test axis
-			{
-				command_interfaces_[_axs].set_value(ax_pos[_cntr]);
-			}
+			command_interfaces_[_axs].set_value(ax_pos[_counter_val]);
 		}
-		_cntr++;
+		_counter_val++;
 	}
+	// Drive back
+	else if(_counter_val_back < back_to_init_pos.size())
+	{
+		for (_axs = 0; _axs < AXES; _axs++)
+		{
+			command_interfaces_[_axs].set_value(back_to_init_pos[_counter_val_back]);
+		}
+		_counter_val_back++;	
+	}	
+	
+
+
+
+
 	// else if(_sets < 5)
 	// {
 	// 	counter = 0;

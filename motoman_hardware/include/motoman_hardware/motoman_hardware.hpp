@@ -37,6 +37,9 @@ namespace motoman_hardware
 #define TCP_TIMEOUT_S 1 // in s
 #define UDP_TIMEOUT_NS 500000 // in ns = 0.5 ms
 
+#define ROBOT_INC_MAX_FACTOR 0.5
+#define ROBOT_INC_ACC_FACTOR 0.05
+
 class MotomanHardware : public hardware_interface::SystemInterface
 {
 public:
@@ -102,20 +105,38 @@ public:
     std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
 
 
+    // MOTOMAN_HARDWARE_PUBLIC
+    // hardware_interface::return_type prepare_command_mode_switch(
+    //     const std::vector<std::string> & start_interfaces, const std::vector<std::string> & stop_interfaces
+    // ) override;
+
+    // MOTOMAN_HARDWARE_PUBLIC
+    // hardware_interface::return_type perform_command_mode_switch(
+    //     const std::vector<std::string> & start_interfaces, const std::vector<std::string> & stop_interfaces
+    // ) override;
+
+
 private:
 
     int send_tcp_request(simple_message::SmCommandType command);
     void shutdown_helper();
     bool _is_deactivated = false;
 
-    std::vector<double> hw_commands;
-    std::vector<double> hw_pos_cmd;
-    std::vector<double> hw_pos_set;
-    std::vector<double> hw_pos_fb;
-    std::vector<double> hw_vel_set;
-    std::vector<double> hw_vel_fb;
+    std::vector<double> hw_commands;    // command interface POSITION
+    std::vector<double> hw_cmd_initial;
 
-    bool init_hw_commands;
+    std::vector<double> hw_pos_snd;     // pos sent to robot
+    std::vector<double> hw_pos_cmd;     // pos commanded on robot
+    std::vector<double> hw_pos_set;     // pos set on robot - state interface POSITION
+    std::vector<double> hw_pos_fb;      // pos feedback from robot
+    std::vector<double> hw_vel_cmd;     // vel commanded on robot
+    std::vector<double> hw_vel_set;     // vel set on robot - state interface VELOCITY
+    std::vector<double> hw_vel_fb;      // vel feedback from robot
+    std::vector<double> hw_acc_cmd;     // acc commanded on robot
+    std::vector<double> hw_acc_set;     // acc set on robot
+                                        // no API to read acc feedback -> derive vel
+
+    bool init_hw_commands, initial_controller_commands;
     size_t joints_size;
 
     // State msg publisher

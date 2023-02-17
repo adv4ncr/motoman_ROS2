@@ -78,6 +78,9 @@ namespace motoman_hardware::udp_rt_message
 		CODE_UNDEFINED = 0,
 		CODE_CONFIRM = 1,
 
+		CODE_MAX_INC_ERROR = 10,
+		CODE_MAX_ACC_ERROR = 11,
+
 		CODE_UNSPECIFIED = 100,
 		CODE_ALARM,
 		CODE_ERROR,
@@ -152,15 +155,21 @@ namespace motoman_hardware::udp_rt_message
 	struct _RtMsgBodyCommand
 	{
 		float pos[RT_ROBOT_JOINTS_MAX];
+		float INC_FACTOR;
+		float ACC_FACTOR;
 	} __attribute__((packed));
 	typedef struct _RtMsgBodyCommand RtMsgBodyCommand;
 
 	struct _RtMsgBodyState
 	{
+		float pos_cmd[RT_ROBOT_JOINTS_MAX];
 		float pos_set[RT_ROBOT_JOINTS_MAX];
 		float pos_fb[RT_ROBOT_JOINTS_MAX];
+		float vel_cmd[RT_ROBOT_JOINTS_MAX];
 		float vel_set[RT_ROBOT_JOINTS_MAX];
 		float vel_fb[RT_ROBOT_JOINTS_MAX];
+		float acc_cmd[RT_ROBOT_JOINTS_MAX];
+		float acc_set[RT_ROBOT_JOINTS_MAX];
 
 		// Debug
 		unsigned char dbg_axs_sync_state[RT_ROBOT_JOINTS_MAX];

@@ -89,9 +89,9 @@ public:
 
     void get_values(const double &t, double &p, double &v, double &a)
     {
-        p = A * sin(t * 250 * B) + _p0;
-        v = A * B * cos(t * 250 * B);
-        a = -A * B*B * sin(t * 250 * B);           
+        p = A * sin(t * B) + _p0;
+        v = A * B * cos(t * B);
+        a = -A * B*B * sin(t * B);           
     }
 
 private:
@@ -123,9 +123,8 @@ public:
     CSVreader(std::string & path)
     {
         parse(path);
-
-        for(auto v : values)
-        std::cout << "values: " << v << std::endl;
+        // for(auto v : values)
+        // std::cout << "values: " << v << std::endl;
     }
 
     std::vector<double> values;
@@ -171,24 +170,31 @@ private:
             throw std::runtime_error("[CSV] no values");
         }
 
+
     }
 };
 
 class RealData
 {
 public:
-    RealData(double pos0, double v, double a, std::string file_path)
+    RealData(std::string file_path) : _csv(file_path)
+    {}
+
+    void get_values(const double &/*t*/, double &p, double & /*v*/, double &/*a*/)
     {
-        CSVreader _csv (file_path);
-
+        if(value_counter < _csv.values.size())
+        {
+            p = _csv.values[value_counter++];
+        }
+        else
+        {
+            p = _csv.values.back();
+            std::cout << "[REAL_DATA] end of values" << std::endl;
+        }
     }
-
-    // void get_values(const double &t, double &p, double &v, double &a) override
-    // {
-
-    // }
-
-
+private:
+    CSVreader _csv;
+    size_t value_counter = 0;
 };
 
 
