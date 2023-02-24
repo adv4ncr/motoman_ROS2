@@ -72,6 +72,7 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
     
     hw_commands.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
     hw_cmd_initial.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
+    hw_cmd_prev.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
     hw_pos_snd.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
     hw_pos_cmd.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
     hw_pos_set.resize(joints_size, std::numeric_limits<double>::quiet_NaN());
@@ -436,6 +437,7 @@ hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*tim
         {
             hw_commands[i] = rtMsgRecv_.body.state[0].pos_fb[i];
             hw_cmd_initial[i] = rtMsgRecv_.body.state[0].pos_fb[i];
+            hw_cmd_prev[i] = rtMsgRecv_.body.state[0].pos_fb[i];
         }
         init_hw_commands = true;
     }
@@ -458,9 +460,18 @@ hardware_interface::return_type MotomanHardware::write(const rclcpp::Time & /*ti
     for(uint8_t i = 0; i < joints_size; i++)
     {
         // #TODO handle multiple control groups
+        
+        // Handle NaN values
+        if(std::isnan(hw_commands[i]))
+        {
+            hw_commands[i] = hw_cmd_prev[i];
+            RCLCPP_WARN_ONCE(rclcpp::get_logger("MotomanHardware"), "axis %d: got NaN value", i); 
+        }
+
         rtMsgSend_.body.command[0].pos[i] = hw_commands[i];
         hw_pos_snd[i] = hw_commands[i];     // #TEST publish current command in state interface
-    
+        hw_cmd_prev[i] = hw_commands[i];
+
         // #TODO remove for new controller software
         if(!initial_controller_commands && rtMsgSend_.body.command[0].pos[i] != hw_cmd_initial[i])
         {
@@ -469,7 +480,6 @@ hardware_interface::return_type MotomanHardware::write(const rclcpp::Time & /*ti
         }
 
     }
-
 
 
     // std::string s;

@@ -38,7 +38,7 @@ namespace motoman_hardware
 #define UDP_TIMEOUT_NS 500000 // in ns = 0.5 ms
 
 #define ROBOT_INC_MAX_FACTOR 0.5
-#define ROBOT_INC_ACC_FACTOR 0.05
+#define ROBOT_INC_ACC_FACTOR 0.02
 
 class MotomanHardware : public hardware_interface::SystemInterface
 {
@@ -124,6 +124,7 @@ private:
 
     std::vector<double> hw_commands;    // command interface POSITION
     std::vector<double> hw_cmd_initial;
+    std::vector<double> hw_cmd_prev;
 
     std::vector<double> hw_pos_snd;     // pos sent to robot
     std::vector<double> hw_pos_cmd;     // pos commanded on robot
