@@ -160,13 +160,30 @@ def generate_launch_description():
         condition=IfCondition(load_gripper)
     )
 
+    cartesian_motion_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["cartesian_motion_controller", "--inactive", "-c", "/controller_manager"],
+    )
+    motion_control_handle_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["motion_control_handle", "--inactive", "-c", "/controller_manager"],
+    )
+
     # ------------------ NODES ------------------
     nodes = [
         controller_node,
         robot_state_pub_node,
         joint_state_broadcaster_spawner,
         delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
-        gripper_launch
+        # RVIZ
+        rviz_node,
+        # Gripper
+        gripper_launch,
+        # # Cartesian motion controller
+        # cartesian_motion_controller_spawner,
+        # motion_control_handle_spawner,   
     ]
 
     return LaunchDescription(declared_arguments + nodes)
