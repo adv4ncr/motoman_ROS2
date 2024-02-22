@@ -542,6 +542,12 @@ void Ros_Controller_StatusInit(Controller* controller)
 	controller->ioStatusAddr[IO_ROBOTSTATUS_PFL_AVOID_JOINT].ulAddr = 15124;	// PFL function avoidance joint enabled
 	controller->ioStatusAddr[IO_ROBOTSTATUS_PFL_AVOID_TRANS].ulAddr = 15125;	// PFL function avoidance translation enabled
 #endif
+#if READ_DIRECT_IN
+	controller->ioStatusAddr[IO_ROBOTSTATUS_DIRECT_IN_1].ulAddr = 80080;			// Direct In 1
+	controller->ioStatusAddr[IO_ROBOTSTATUS_DIRECT_IN_2].ulAddr = 80081;			// Direct In 2
+	controller->ioStatusAddr[IO_ROBOTSTATUS_DIRECT_IN_3].ulAddr = 80082;			// Direct In 3
+	controller->ioStatusAddr[IO_ROBOTSTATUS_DIRECT_IN_4].ulAddr = 80083;			// Direct In 4
+#endif
 	controller->alarmCode = 0;
 }
 
@@ -771,6 +777,8 @@ int Ros_Controller_StatusToMsg(Controller* controller, SimpleMsg* sendMsg)
 	else
 		sendMsg->body.robotStatus.mode = 1;
 	sendMsg->body.robotStatus.motion_possible = (int)(Ros_Controller_IsMotionReady(controller));
+
+	sendMsg->body.robotStatus.input_direct_in = controller->direct_in;
 	
 	return(sendMsg->prefix.length + sizeof(SmPrefix));
 }
@@ -802,8 +810,10 @@ BOOL Ros_Controller_StatusUpdate(Controller* controller)
 			if(controller->ioStatus[i] != ioStatus[i])
 			{
 				//printf("Change of ioStatus[%d]\r\n", i);
-				
+				controller->bStatusUpdate = TRUE;
 				controller->ioStatus[i] = ioStatus[i];
+
+				// Set controller state based on ioStatus
 				switch(i)
 				{
 					case IO_ROBOTSTATUS_ALARM_MAJOR: // alarm
@@ -850,6 +860,28 @@ BOOL Ros_Controller_StatusUpdate(Controller* controller)
 						break;
 					}
 #endif
+#if READ_DIRECT_IN
+					case IO_ROBOTSTATUS_DIRECT_IN_1:
+					{
+						controller->direct_in |= 1 << 0;
+						break;
+					}
+					case IO_ROBOTSTATUS_DIRECT_IN_2:
+					{
+						controller->direct_in |= 1 << 1;
+						break;
+					}
+					case IO_ROBOTSTATUS_DIRECT_IN_3:
+					{
+						controller->direct_in |= 1 << 2;
+						break;
+					}
+					case IO_ROBOTSTATUS_DIRECT_IN_4:
+					{
+						controller->direct_in |= 1 << 3;
+						break;
+					}
+#endif
 				}
 			}
 		}
@@ -862,7 +894,6 @@ BOOL Ros_Controller_StatusUpdate(Controller* controller)
 	else
 		return FALSE;
 }
-
 
 
 /**** Wrappers on MP standard function ****/

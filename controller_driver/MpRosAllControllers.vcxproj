@@ -124,12 +124,12 @@
     <IntDir />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='YRC1000u|Win32'">
-    <NMakeBuildCommandLine>mpbuilder.exe -c $(Configuration) -p "$(ProjectDir)\" -n "MotoRosYRC1u_" -o build</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>mpbuilder.exe -c $(Configuration) -p "$(ProjectDir)\" -n "MotoRos2RT" -o build</NMakeBuildCommandLine>
     <NMakeOutput>$(MP_VS_Install)DevTools\OnlineDownload.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>$(NMakePreprocessorDefinitions);$(Configuration)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(MP_VS_Install)$(Configuration)\inc</NMakeIncludeSearchPath>
-    <NMakeReBuildCommandLine>mpbuilder.exe -c $(Configuration) -p "$(ProjectDir)\" -n "MotoRosYRC1u_" -o rebuild</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>mpbuilder.exe -c $(Configuration) -p "$(ProjectDir)\" -n "MotoRosYRC1u_" -o clean</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>mpbuilder.exe -c $(Configuration) -p "$(ProjectDir)\" -n "MotoRos2RT" -o rebuild</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>mpbuilder.exe -c $(Configuration) -p "$(ProjectDir)\" -n "MotoRos2RT" -o clean</NMakeCleanCommandLine>
     <NMakeForcedIncludes />
     <OutDir>$(SolutionDir)output\$(Configuration)\</OutDir>
     <IntDir />
@@ -197,6 +197,7 @@
     <ClInclude Include="RealTimeMotionServer.h" />
     <ClInclude Include="SimpleMessage.h" />
     <ClInclude Include="StateServer.h" />
+    <ClInclude Include="udp_rt_protocol.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

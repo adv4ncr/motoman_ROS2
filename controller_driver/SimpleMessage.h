@@ -200,6 +200,7 @@ struct _SmBodyRobotStatus		// ROS_MSG_ROBOT_STATUS = 13
 	int in_motion;				// Is currently executing a motion command:  -1=Unknown, 1=True, 0=False 
 	int mode;  					// Controller/Pendant mode: -1=Unknown, 1=Manual(TEACH), 2=Auto(PLAY)
 	int motion_possible;		// Is the controller ready to receive motion: -1=Unknown, 1=ENABLED, 0=DISABLED 
+	UINT8 input_direct_in;		// Direct in inputs
 } __attribute__((__packed__));
 typedef struct _SmBodyRobotStatus SmBodyRobotStatus;
 
@@ -492,7 +493,7 @@ extern int Ros_SimpleMsg_MotionReply(SimpleMsg* receiveMsg, int result, int subc
 extern int Ros_SimpleMsg_IoReply(int result, int subcode, SimpleMsg* replyMsg);
 
 //Uncomment the DEBUG definition to enable debug-messages at runtime
-//#define DEBUG  1
+#define DEBUG  1
 
 #ifdef DEBUG
 // #warning Dont forget to disable the DEBUG flag

@@ -1,3 +1,4 @@
+_buildLog/
+.vs/
 obj/
 output/
-.vs/

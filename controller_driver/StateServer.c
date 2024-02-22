@@ -131,11 +131,11 @@ void Ros_StateServer_StopConnection(Controller* controller, int connectionIndex)
 //-----------------------------------------------------------------------
 void Ros_StateServer_SendState(Controller* controller, int connectionIndex)
 {
-	int groupNo;
+	//int groupNo;
 	SimpleMsg sendMsg;
-	SimpleMsg sendMsgFEx;
-	int msgSize, fexMsgSize = 0;
-	BOOL bOkToSendExFeedback;
+	//SimpleMsg sendMsgFEx;
+	int msgSize = 0; //fexMsgSize = 0;
+	//BOOL bOkToSendExFeedback;
 	BOOL bSuccesfulSend;
 	
 	printf("Starting State Server Send State task\r\n");
@@ -143,45 +143,49 @@ void Ros_StateServer_SendState(Controller* controller, int connectionIndex)
 	
 	while(TRUE) //loop will break when there is a transmission error
 	{
-		Ros_SimpleMsg_JointFeedbackEx_Init(controller->numGroup, &sendMsgFEx);
-		bOkToSendExFeedback = TRUE;
+		// Ros_SimpleMsg_JointFeedbackEx_Init(controller->numGroup, &sendMsgFEx);
+		// bOkToSendExFeedback = TRUE;
 
-		// Send feedback position for each control group
-		for(groupNo=0; groupNo < controller->numGroup; groupNo++)
-		{
-			msgSize = Ros_SimpleMsg_JointFeedback(controller->ctrlGroups[groupNo], &sendMsg);
-			fexMsgSize = Ros_SimpleMsg_JointFeedbackEx_Build(groupNo, &sendMsg, &sendMsgFEx);
+		// // Send feedback position for each control group
+		// for(groupNo=0; groupNo < controller->numGroup; groupNo++)
+		// {
+		// 	msgSize = Ros_SimpleMsg_JointFeedback(controller->ctrlGroups[groupNo], &sendMsg);
+		// 	fexMsgSize = Ros_SimpleMsg_JointFeedbackEx_Build(groupNo, &sendMsg, &sendMsgFEx);
+		// 	if(msgSize > 0)
+		// 	{
+		// 		bSuccesfulSend = Ros_StateServer_SendMsgToAllClient(controller, connectionIndex, &sendMsg, msgSize);
+		// 		if (!bSuccesfulSend)
+		// 			break;
+		// 	}
+		// 	else
+		// 	{
+		// 		printf("Ros_SimpleMsg_JointFeedback returned a message size of 0\r\n");
+		// 		bOkToSendExFeedback = FALSE;
+		// 	}
+		// }
+
+		// if (controller->numGroup < 2) //only send the ROS_MSG_MOTO_JOINT_FEEDBACK_EX message if we have multiple control groups
+		// 	bOkToSendExFeedback = FALSE;
+
+		// if (bOkToSendExFeedback) //send extended-feedback message
+		// {
+		// 	bSuccesfulSend = Ros_StateServer_SendMsgToAllClient(controller, connectionIndex, &sendMsgFEx, fexMsgSize);
+		// 	if (!bSuccesfulSend)
+		// 		break;
+		// }
+
+		// Send controller/robot status
+		if (controller->bStatusUpdate) {
+			controller->bStatusUpdate = FALSE;
+			msgSize = Ros_Controller_StatusToMsg(controller, &sendMsg);
 			if(msgSize > 0)
 			{
 				bSuccesfulSend = Ros_StateServer_SendMsgToAllClient(controller, connectionIndex, &sendMsg, msgSize);
 				if (!bSuccesfulSend)
 					break;
 			}
-			else
-			{
-				printf("Ros_SimpleMsg_JointFeedback returned a message size of 0\r\n");
-				bOkToSendExFeedback = FALSE;
-			}
 		}
 
-		if (controller->numGroup < 2) //only send the ROS_MSG_MOTO_JOINT_FEEDBACK_EX message if we have multiple control groups
-			bOkToSendExFeedback = FALSE;
-
-		if (bOkToSendExFeedback) //send extended-feedback message
-		{
-			bSuccesfulSend = Ros_StateServer_SendMsgToAllClient(controller, connectionIndex, &sendMsgFEx, fexMsgSize);
-			if (!bSuccesfulSend)
-				break;
-		}
-
-		// Send controller/robot status
-		msgSize = Ros_Controller_StatusToMsg(controller, &sendMsg);
-		if(msgSize > 0)
-		{
-			bSuccesfulSend = Ros_StateServer_SendMsgToAllClient(controller, connectionIndex, &sendMsg, msgSize);
-			if (!bSuccesfulSend)
-				break;
-		}
 		Ros_Sleep(STATE_UPDATE_MIN_PERIOD);
 	}
 	

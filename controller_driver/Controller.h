@@ -37,6 +37,8 @@
 #define TCP_PORT_IO							50242
 #define TCP_PORT_REALTIME_MOTION			50243
 
+#define READ_DIRECT_IN 						1
+
 #define IO_FEEDBACK_WAITING_MP_INCMOVE		11120  //output# 889 
 #define IO_FEEDBACK_MP_INCMOVE_DONE			11121  //output# 890 
 #define IO_FEEDBACK_INITIALIZATION_DONE		11122  //output# 891 
@@ -106,6 +108,12 @@ typedef enum
 	IO_ROBOTSTATUS_PFL_AVOID_JOINT,
 	IO_ROBOTSTATUS_PFL_AVOID_TRANS,
 #endif
+#if READ_DIRECT_IN
+	IO_ROBOTSTATUS_DIRECT_IN_1,
+	IO_ROBOTSTATUS_DIRECT_IN_2,
+	IO_ROBOTSTATUS_DIRECT_IN_3,
+	IO_ROBOTSTATUS_DIRECT_IN_4,
+#endif
 	IO_ROBOTSTATUS_MAX
 } IoStatusIndex;
  
@@ -117,6 +125,7 @@ typedef struct
 	CtrlGroup* ctrlGroups[MP_GRP_NUM];						// Array of the controller control group
 
 	// Controller Status
+	BOOL bStatusUpdate;										// Flag indicating status change
 	MP_IO_INFO ioStatusAddr[IO_ROBOTSTATUS_MAX];			// Array of Specific Input Address representing the I/O status
 	USHORT ioStatus[IO_ROBOTSTATUS_MAX];					// Array storing the current status of the controller
 	int alarmCode;											// Alarm number currently active
@@ -125,6 +134,7 @@ typedef struct
 	BOOL bPFLEnabled;										// Flag indicating that the controller has the PFL option enabled
 	BOOL bPFLduringRosMove;									// Flag to keep track PFL activation during RosMotion
 	BOOL bMpIncMoveError;									// Flag indicating that the incremental motion API failed
+	UINT8 direct_in;										// Status bits for direct in (IO extension board)
 
 	// Connection Server
 	int tidConnectionSrv;

@@ -122,5 +122,8 @@
     <ClInclude Include="RealTimeMotionServer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="udp_rt_protocol.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
