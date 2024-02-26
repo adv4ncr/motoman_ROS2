@@ -801,6 +801,9 @@ BOOL Ros_Controller_StatusUpdate(Controller* controller)
 	BOOL prevReadyStatus;
 
 	prevReadyStatus = Ros_Controller_IsMotionReady(controller);
+
+	// Reset input bitmask
+	controller->direct_in = 0;
 	
 	if(Ros_Controller_StatusRead(controller, ioStatus))
 	{
@@ -861,6 +864,7 @@ BOOL Ros_Controller_StatusUpdate(Controller* controller)
 					}
 #endif
 #if READ_DIRECT_IN
+					// Set input bitmask
 					case IO_ROBOTSTATUS_DIRECT_IN_1:
 					{
 						controller->direct_in |= 1 << 0;
