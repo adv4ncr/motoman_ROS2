@@ -767,16 +767,24 @@ int Ros_Controller_StatusToMsg(Controller* controller, SimpleMsg* sendMsg)
 	sendMsg->header.replyType = ROS_REPLY_INVALID;
 	
 	// set body
-	sendMsg->body.robotStatus.drives_powered = (int)(Ros_Controller_IsServoOn(controller));
-	sendMsg->body.robotStatus.e_stopped = (int)(Ros_Controller_IsEStop(controller));
+	sendMsg->body.robotStatus.drives_powered = (INT8)(Ros_Controller_IsServoOn(controller));
+	sendMsg->body.robotStatus.e_stopped = (INT8)(Ros_Controller_IsEStop(controller));
 	sendMsg->body.robotStatus.error_code = controller->alarmCode;
-	sendMsg->body.robotStatus.in_error = (int)Ros_Controller_IsAlarm(controller);
-	sendMsg->body.robotStatus.in_motion = (int)(Ros_Controller_IsInMotion(controller));
-	if(Ros_Controller_IsPlay(controller))
+	sendMsg->body.robotStatus.in_error = (INT8)Ros_Controller_IsAlarm(controller);
+	sendMsg->body.robotStatus.in_motion = (INT8)(Ros_Controller_IsInMotion(controller));
+	if(Ros_Controller_IsRemote(controller)) {
+		sendMsg->body.robotStatus.mode = 0;
+	}
+	else if(Ros_Controller_IsPlay(controller)) {
 		sendMsg->body.robotStatus.mode = 2;
-	else
+	}
+	else if (Ros_Controller_IsTeach(controller)) {
 		sendMsg->body.robotStatus.mode = 1;
-	sendMsg->body.robotStatus.motion_possible = (int)(Ros_Controller_IsMotionReady(controller));
+	}
+	else {
+		sendMsg->body.robotStatus.mode = -1;
+	}
+	sendMsg->body.robotStatus.motion_possible = (INT8)Ros_Controller_IsMotionReady(controller);
 
 	sendMsg->body.robotStatus.input_direct_in = controller->direct_in;
 	
