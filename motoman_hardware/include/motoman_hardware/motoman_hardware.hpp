@@ -3,6 +3,7 @@
 
 
 
+#include <memory>
 #include <rclcpp/rclcpp.hpp>
 //#include <rclcpp/macros.hpp>
 //#include <angles/angles.h>
@@ -13,6 +14,7 @@
 
 
 #include <netinet/in.h>
+#include <std_msgs/msg/detail/u_int8__struct.hpp>
 #include <sys/socket.h>
 #include <poll.h>
 #include <arpa/inet.h>
@@ -21,13 +23,16 @@
 #include "motoman_hardware/udp_rt_protocol.h"
 #include "motoman_hardware/visibility_control.h"
 
-#include <fastdds/dds/domain/DomainParticipantFactory.hpp>
-#include <fastdds/dds/domain/DomainParticipant.hpp>
-#include <fastdds/dds/topic/TypeSupport.hpp>
-#include <fastdds/dds/publisher/Publisher.hpp>
-#include <fastdds/dds/publisher/qos/PublisherQos.hpp>
-#include <fastdds/dds/publisher/DataWriter.hpp>
-#include <fastdds/dds/publisher/qos/DataWriterQos.hpp>
+#include "std_msgs/msg/u_int8.hpp"
+
+// #include <fastdds/dds/domain/DomainParticipantFactory.hpp>
+// #include <fastdds/dds/domain/DomainParticipant.hpp>
+// #include <fastdds/dds/topic/TypeSupport.hpp>
+// #include <fastdds/dds/publisher/Publisher.hpp>
+// #include <fastdds/dds/publisher/qos/PublisherQos.hpp>
+// #include <fastdds/dds/publisher/DataWriter.hpp>
+// #include <fastdds/dds/publisher/qos/DataWriterQos.hpp>
+#include <thread>
 //#include <fastdds/dds/publisher/DataWriterListener.hpp>
 #include "motoman_hardware/RobotStatePubSubTypes.h"
 
@@ -39,6 +44,19 @@ namespace motoman_hardware
 
 #define ROBOT_INC_MAX_FACTOR 0.5
 #define ROBOT_INC_ACC_FACTOR 0.02
+
+enum class REQUEST_RETURN_TYPE {
+    ERROR,
+    SUCCESS,
+};
+
+enum class THREAD_STATE {
+    INIT,
+    START,
+    STOP,
+    RUN,
+    ERROR,
+};
 
 class MotomanHardware : public hardware_interface::SystemInterface
 {
@@ -118,8 +136,15 @@ public:
 
 private:
 
-    int send_tcp_request(simple_message::SmCommandType command);
+    // Functions
+    REQUEST_RETURN_TYPE send_tcp_motion_request(simple_message::SmCommandType command);
+	void set_robot_status_thread(THREAD_STATE state);
+    //void run_robot_status_polling();
     void shutdown_helper();
+    
+    // Variables
+	rclcpp::Logger logger;              // Logger interface
+    
     bool _is_deactivated = false;
 
     std::vector<double> hw_commands;    // command interface POSITION
@@ -143,11 +168,11 @@ private:
     // State msg publisher
 
     motoman_description::msg::RobotState state_msg;
-    eprosima::fastdds::dds::Publisher* _state_publisher = nullptr;
-    eprosima::fastdds::dds::Topic* _state_topic  = nullptr;
-    eprosima::fastdds::dds::DataWriter* state_data_writer = nullptr;
-    eprosima::fastdds::dds::DomainParticipant* _state_domain_participant = nullptr;
-    eprosima::fastdds::dds::TypeSupport _state_type;
+    // eprosima::fastdds::dds::Publisher* _state_publisher = nullptr;
+    // eprosima::fastdds::dds::Topic* _state_topic  = nullptr;
+    // eprosima::fastdds::dds::DataWriter* state_data_writer = nullptr;
+    // eprosima::fastdds::dds::DomainParticipant* _state_domain_participant = nullptr;
+    // eprosima::fastdds::dds::TypeSupport _state_type;
 
     // RT message variables
     udp_rt_message::RtMsg rtMsgRecv_, rtMsgSend_;
@@ -163,14 +188,25 @@ private:
     
     // Network file descriptor handling
     //fd_set server_rfds;
-    struct timespec tcp_timeout, udp_timeout;
-    struct pollfd pfds[1];
+    struct timespec tcp_timeout;//, udp_timeout;
+    struct pollfd pfds;
     uint64_t _nw_success_counter = 0;
+    uint64_t _nw_miss_counter = 0;
     int retval;
+
 
     // Network send /recv bytes
     ssize_t bytesSend, bytesRecv;
 
+    // Robot status thread - read TCP messages from controller
+    typedef struct {
+        std::unique_ptr<std::thread> thread_ptr;
+        THREAD_STATE thread_state;
+        std::array<simple_message::SimpleMsg, 2> msgs;
+        rclcpp::Publisher<std_msgs::msg::UInt8>::SharedPtr data_publisher_;
+    } ROBOT_STATUS_DATA_t;
+
+    ROBOT_STATUS_DATA_t robot_status_data;
 
 };
 
