@@ -11,9 +11,8 @@
 
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
-  <depend>forward_command_controller</depend>
   <depend>controller_interface</depend>
-  <!-- <depend>generate_parameter_library</depend> -->
+  <depend>generate_parameter_library</depend>
 
   <build_depend>pluginlib</build_depend>
 

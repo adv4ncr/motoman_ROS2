@@ -6,62 +6,58 @@
 namespace motoman_controllers
 {
 
-StaticTest::StaticTest()
-: forward_command_controller::ForwardCommandController()
-{
-	interface_name_ = hardware_interface::HW_IF_POSITION;
-}
 
 controller_interface::CallbackReturn StaticTest::on_init()
 {
 
-	auto ret = forward_command_controller::ForwardCommandController::on_init();
-	if (ret != CallbackReturn::SUCCESS)
-	{
-		return ret;
+	try {
+		param_listener_ = std::make_shared<ParamListener>(get_node());
+		params_ = param_listener_->get_params();
 	}
-
-	try
-	{
-		// Explicitly set the interface parameter declared by the forward_command_controller
-		// to match the value set in the StaticTest constructor.
-		get_node()->set_parameter(
-			rclcpp::Parameter("interface_name", hardware_interface::HW_IF_POSITION));
-	}
-	catch (const std::exception & e)
-	{
-		fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
+	catch (const std::exception & e) {
+		RCLCPP_ERROR(
+			get_node()->get_logger(), "Exception thrown during init stage with message: %s \n", e.what());
 		return CallbackReturn::ERROR;
 	}
-
 
 	return CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn StaticTest::on_configure(const rclcpp_lifecycle::State & prev_state)
+controller_interface::CallbackReturn StaticTest::on_configure(const rclcpp_lifecycle::State & /*prev_state*/)
 {
-	// Run base configure
-	auto ret = forward_command_controller::ForwardControllersBase::on_configure(prev_state);
-	if (ret != CallbackReturn::SUCCESS)
-	{
-		return ret;
+	if (!param_listener_) {
+		RCLCPP_ERROR(get_node()->get_logger(), "Error encountered during init");
+		return controller_interface::CallbackReturn::ERROR;
 	}
 
+	// Update the dynamic map parameters
+	param_listener_->refresh_dynamic_parameters();
+	// Check provided parameters
+	params_ = param_listener_->get_params();
+
+
 	// Get names of actuated joints
+	
+
 	joint_names = get_node()->get_parameter("joints").as_string_array();
-	if (joint_names.empty())
-	{
+	if (joint_names.empty()) {
 		RCLCPP_ERROR(get_node()->get_logger(), "joints array is empty");
 		return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
 	}
 
 	// Get the state_interfaces parameter
 	state_interface_types = get_node()->get_parameter("state_interfaces").as_string_array();
-	if (state_interface_types.empty())
-	{
+	if (state_interface_types.empty()) {
 		RCLCPP_ERROR(get_node()->get_logger(), "No state_interfaces specified");
 		return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
 	}
+	
+	// Get the command_interfaces parameter -> FIXED to: hardware_interface::HW_IF_POSITION
+	// command_interface_types = get_node()->get_parameter("command_interfaces").as_string_array();
+	// if (command_interface_types.empty()) {
+	// 	RCLCPP_ERROR(get_node()->get_logger(), "No command_interfaces specified");
+	// 	return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::ERROR;
+	// }
 
 
 
@@ -69,8 +65,7 @@ controller_interface::CallbackReturn StaticTest::on_configure(const rclcpp_lifec
 	
 	// Set time values
 	double _t_inc = 0;
-	for(auto i = 0u; i<t_values.size(); i++)
-	{
+	for(auto i = 0u; i<t_values.size(); i++) {
 		t_values[i] = _t_inc;
 		_t_inc += 1/250.;
 	}
@@ -83,15 +78,12 @@ controller_interface::CallbackReturn StaticTest::on_configure(const rclcpp_lifec
 
 	motion_generators::Ramp gen(_p0, _v0, _a0);
 	//motion_generators::Sine gen(_p0, _v0, _a0);
-	//motion_generators::RealData gen("/home/ros/joint_states_wind_9_interpolated.csv");
+	//motion_generators::RealData gen("my_data.csv");
 
 	
-	for(auto i = 0u; i<ax_pos.size(); i++)
-	{
+	for(auto i = 0u; i<ax_pos.size(); i++) {
 		gen.get_values(t_values[i], ax_pos[i], ax_vel[i], ax_acc[i]);
 	}
-
-
 
 	// Drive back to initial position 0
 	double _p0_back = ax_pos.back();
@@ -99,8 +91,7 @@ controller_interface::CallbackReturn StaticTest::on_configure(const rclcpp_lifec
 	//std::cout << "p0: " << _p0_back << " v: " << _v_back << std::endl;
 	motion_generators::Ramp gen_back(_p0_back, _v_back, 0);
 	double t_back = 0, ax_pos_back, ax_vel_back, ax_acc_back;
-	for(;;)
-	{
+	for(;;) {
 		if(_p0_back == 0.) break;
 		else if(back_to_init_pos.size() > 5000) break;
 		gen_back.get_values(t_back, ax_pos_back, ax_vel_back, ax_acc_back);
@@ -121,19 +112,30 @@ controller_interface::InterfaceConfiguration StaticTest::state_interface_configu
 {
 	controller_interface::InterfaceConfiguration conf;
 	conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-	// conf.names = command_interface_types_; // #TODO Just works, because both interface_names are 'position'
 
 	conf.names.reserve(joint_names.size() * state_interface_types.size());
 
-	for (const auto & interface_type : state_interface_types)
-	{
-		for (const auto & joint_name : joint_names)
-		{
+	for (const auto & interface_type : state_interface_types) {
+		for (const auto & joint_name : joint_names) {
 			conf.names.push_back(joint_name + "/" + interface_type);
 		}
 	}
 
-	// for(const auto & _s : conf.names) RCLCPP_WARN(get_node()->get_logger(), "conf.names: %s", _s.c_str());
+	return conf;
+}
+
+controller_interface::InterfaceConfiguration StaticTest::command_interface_configuration() const
+{
+	controller_interface::InterfaceConfiguration conf;
+	conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
+
+	conf.names.reserve(joint_names.size());
+
+	for (const auto & joint_name : joint_names) {
+		conf.names.push_back(joint_name + "/" + hardware_interface::HW_IF_POSITION);
+		
+	}
+
 	return conf;
 }
 
@@ -141,29 +143,17 @@ controller_interface::CallbackReturn StaticTest::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
 	std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>> ordered_command_interfaces;
+
 	if (!controller_interface::get_ordered_interfaces(
-		command_interfaces_, command_interface_types_, std::string(""), ordered_command_interfaces) ||
-		command_interface_types_.size() != ordered_command_interfaces.size())
+			command_interfaces_, joint_names, 
+			hardware_interface::HW_IF_POSITION, ordered_command_interfaces) ||
+		joint_names.size() != ordered_command_interfaces.size())
 	{
 		RCLCPP_ERROR(
 			get_node()->get_logger(), "Expected %zu command interfaces, got %zu",
-			command_interface_types_.size(), ordered_command_interfaces.size());
+			joint_names.size(), ordered_command_interfaces.size());
 		return controller_interface::CallbackReturn::ERROR;
 	}
-
-	// std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> ordered_state_interfaces;
-	// if (!controller_interface::get_ordered_interfaces(
-	// 	state_interfaces_, state_interface_types, std::string(""), ordered_state_interfaces) ||
-	// 	state_interface_types.size() != ordered_state_interfaces.size())
-	// {
-	// 	RCLCPP_ERROR(
-	// 		get_node()->get_logger(), "Expected %zu state interfaces, got %zu",
-	// 		state_interface_types.size(), ordered_state_interfaces.size());
-	// 	return controller_interface::CallbackReturn::ERROR;
-	// }
-
-	// reset command buffer if a command came through callback when controller was inactive
-	rt_command_ptr_ = realtime_tools::RealtimeBuffer<std::shared_ptr<CmdType>>(nullptr);
 
 	// number of axis validation
 	if(AXES != state_interfaces_.size())
@@ -284,35 +274,6 @@ controller_interface::return_type StaticTest::update(const rclcpp::Time & /*time
 		_counter_val_back++;	
 	}	
 	
-
-
-
-
-	// else if(_sets < 5)
-	// {
-	// 	counter = 0;
-	// 	_sets++;
-	// 	RCLCPP_INFO(get_node()->get_logger(), "Set set %d", _sets);
-	// }
-
-
-	// if ((*joint_commands)->data.size() != command_interfaces_.size())
-	// {
-	//   RCLCPP_ERROR_THROTTLE(
-	//     get_node()->get_logger(), *(get_node()->get_clock()), 1000,
-	//     "command size (%zu) does not match number of interfaces (%zu)",
-	//     (*joint_commands)->data.size(), command_interfaces_.size());
-	//   return controller_interface::return_type::ERROR;
-	// }
-
-
-	// for (auto index = 0u; index < command_interfaces_.size(); ++index)
-	// {
-	//   command_interfaces_[index].set_value((*joint_commands)->data[index]);
-	// }
-
-
-
 	return controller_interface::return_type::OK;
 }
 
@@ -321,8 +282,7 @@ controller_interface::return_type StaticTest::update(const rclcpp::Time & /*time
 
 #include "pluginlib/class_list_macros.hpp"
 
-PLUGINLIB_EXPORT_CLASS(
-	motoman_controllers::StaticTest, controller_interface::ControllerInterface)
+PLUGINLIB_EXPORT_CLASS(motoman_controllers::StaticTest, controller_interface::ControllerInterface)
 
 
 

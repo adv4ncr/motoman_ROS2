@@ -5,35 +5,26 @@
 
 #include <rclcpp/rclcpp.hpp>
 
-#include "rclcpp/logging.hpp"
-#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
-
-
 #include "controller_interface/controller_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 
 #include "motoman_controllers/visibility_control.h"
 #include "controller_interface/helpers.hpp"
 
-#include "forward_command_controller/forward_command_controller.hpp"
+#include "controller_interface/controller_interface.hpp"
 
 #include "motoman_controllers/motion_generators.hpp"
+#include "motoman_controllers_parameters.hpp"
 
 namespace motoman_controllers
 {
-using CmdType = std_msgs::msg::Float64MultiArray;
 
-class StaticTest : public forward_command_controller::ForwardCommandController
+class StaticTest : public controller_interface::ControllerInterface
 {
 public:
-    MOTOMAN_CONTROLLERS_PUBLIC
-    StaticTest();
-    
-    MOTOMAN_CONTROLLERS_PUBLIC
-    ~StaticTest() = default;
 
-    // MOTOMAN_CONTROLLERS_PUBLIC
-    // controller_interface::InterfaceConfiguration command_interface_configuration() const override;
+    MOTOMAN_CONTROLLERS_PUBLIC
+    controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
     MOTOMAN_CONTROLLERS_PUBLIC
     controller_interface::InterfaceConfiguration state_interface_configuration() const override;
@@ -69,21 +60,13 @@ protected:
 
 private:
 
+    std::shared_ptr<ParamListener> param_listener_;
+    Params params_;
+
     std::vector<std::string> state_interface_types;
+    //std::vector<std::string> command_interface_types;
     std::vector<std::string> joint_names;
 
-    // #define period_len 500
-    // #define values_size period_len*3+1
-    // #define scale_factor 0.5
-
-    // double factors[axes];
-    // double values[values_size][axes];
-
-	// const double step = M_PI*2/period_len;
-	// double increment;
-
-    // double start_values[axes];
-    // u_int32_t _sets = 0;
     #define AXES 6
     #define AX_TEST 0 // [0..5]
     uint8_t _axs;
@@ -104,4 +87,4 @@ private:
 
 };
 } // namespace motoman_controllers
-#endif // STATIC_TEST_HPP#include 
+#endif // STATIC_TEST_HPP
