@@ -111,8 +111,11 @@ def generate_launch_description():
     controller_node = Node(
         package='controller_manager',
         executable='ros2_control_node',
-        parameters=[{'robot_description': robot_description}, motoman_controllers],
-        #remappings=[('joint_states', 'motoman/joint_states')],
+        parameters=[motoman_controllers],
+        remappings=[
+            ('/controller_manager/robot_description', 'robot_description'),
+            #('joint_states', 'motoman/joint_states')
+        ],
         output="screen",
         namespace=namespace,
         on_exit=Shutdown(),
@@ -132,7 +135,6 @@ def generate_launch_description():
         executable="spawner",
         #arguments=['StaticTestController', '--inactive', '--controller-manager', [namespace, 'controller_manager']],
         arguments=['joint_trajectory_controller', '--controller-manager', [namespace, 'controller_manager']],
-        #arguments=['StaticTestController', '--controller-manager', [namespace, 'controller_manager']],
         namespace=namespace,
     )
 
