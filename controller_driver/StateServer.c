@@ -137,13 +137,16 @@ void Ros_StateServer_SendState(Controller* controller, int connectionIndex)
 	int msgSize = 0; //fexMsgSize = 0;
 	//BOOL bOkToSendExFeedback;
 	BOOL bSuccesfulSend;
-	// Status update counter: Send periodic updates, disregarding an actual change
-	UINT8 msgUpdateCounter = 0;
-	// Set rate to 1 s (1000 ms)
-	#define STATUS_MSG_UPDATE_RATE 1000 / STATE_UPDATE_MIN_PERIOD
+	// // Status update counter: Send periodic updates, disregarding an actual change
+	// UINT8 msgUpdateCounter = 0;
+	// // Set rate to 1 s (1000 ms)
+	// #define STATUS_MSG_UPDATE_RATE 1000 / STATE_UPDATE_MIN_PERIOD
 	
 	printf("Starting State Server Send State task\r\n");
 	printf("Controller number of group = %d\r\n", controller->numGroup);
+
+	// Force first update
+	controller->bStatusUpdate = TRUE;
 	
 	while(TRUE) //loop will break when there is a transmission error
 	{
@@ -179,9 +182,9 @@ void Ros_StateServer_SendState(Controller* controller, int connectionIndex)
 		// }
 
 		// Send controller/robot status
-		if (controller->bStatusUpdate || msgUpdateCounter > STATUS_MSG_UPDATE_RATE) {
+		if (controller->bStatusUpdate) { //|| msgUpdateCounter > STATUS_MSG_UPDATE_RATE) {
 			controller->bStatusUpdate = FALSE;
-			msgUpdateCounter = 0;
+			//msgUpdateCounter = 0;
 			msgSize = Ros_Controller_StatusToMsg(controller, &sendMsg);
 			if(msgSize > 0)
 			{
@@ -191,7 +194,7 @@ void Ros_StateServer_SendState(Controller* controller, int connectionIndex)
 			}
 		}
 
-		msgUpdateCounter++;
+		//msgUpdateCounter++;
 
 		// Sleep 25 ms
 		Ros_Sleep(STATE_UPDATE_MIN_PERIOD);

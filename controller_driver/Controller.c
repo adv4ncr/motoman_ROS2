@@ -129,6 +129,7 @@ BOOL Ros_Controller_Init(Controller* controller)
 	
 	// Init variables and controller status
 	bInitOk = TRUE;
+	controller->bStatusUpdate = TRUE;
 	controller->bRobotJobReady = FALSE;
 	controller->bStopMotion = FALSE;
 	status = GP_isPflEnabled(&controller->bPFLEnabled);
@@ -547,6 +548,7 @@ void Ros_Controller_StatusInit(Controller* controller)
 	controller->ioStatusAddr[IO_ROBOTSTATUS_DIRECT_IN_2].ulAddr = 80081;			// Direct In 2
 	controller->ioStatusAddr[IO_ROBOTSTATUS_DIRECT_IN_3].ulAddr = 80082;			// Direct In 3
 	controller->ioStatusAddr[IO_ROBOTSTATUS_DIRECT_IN_4].ulAddr = 80083;			// Direct In 4
+	controller->direct_in = 0;
 #endif
 	controller->alarmCode = 0;
 }
@@ -787,6 +789,8 @@ int Ros_Controller_StatusToMsg(Controller* controller, SimpleMsg* sendMsg)
 	sendMsg->body.robotStatus.motion_possible = (INT8)Ros_Controller_IsMotionReady(controller);
 
 	sendMsg->body.robotStatus.input_direct_in = controller->direct_in;
+	// Reset input bitmask
+	controller->direct_in = 0;
 	
 	return(sendMsg->prefix.length + sizeof(SmPrefix));
 }
@@ -810,9 +814,6 @@ BOOL Ros_Controller_StatusUpdate(Controller* controller)
 
 	prevReadyStatus = Ros_Controller_IsMotionReady(controller);
 
-	// Reset input bitmask
-	controller->direct_in = 0;
-	
 	if(Ros_Controller_StatusRead(controller, ioStatus))
 	{
 		// Check for change of state and potentially react to the change
@@ -874,23 +875,14 @@ BOOL Ros_Controller_StatusUpdate(Controller* controller)
 #if READ_DIRECT_IN
 					// Set input bitmask
 					case IO_ROBOTSTATUS_DIRECT_IN_1:
-					{
-						controller->direct_in |= 1 << 0;
-						break;
-					}
 					case IO_ROBOTSTATUS_DIRECT_IN_2:
-					{
-						controller->direct_in |= 1 << 1;
-						break;
-					}
 					case IO_ROBOTSTATUS_DIRECT_IN_3:
-					{
-						controller->direct_in |= 1 << 2;
-						break;
-					}
 					case IO_ROBOTSTATUS_DIRECT_IN_4:
 					{
-						controller->direct_in |= 1 << 3;
+						controller->direct_in |= ioStatus[IO_ROBOTSTATUS_DIRECT_IN_1] << 0;
+						controller->direct_in |= ioStatus[IO_ROBOTSTATUS_DIRECT_IN_2] << 1;
+						controller->direct_in |= ioStatus[IO_ROBOTSTATUS_DIRECT_IN_3] << 2;
+						controller->direct_in |= ioStatus[IO_ROBOTSTATUS_DIRECT_IN_4] << 3;
 						break;
 					}
 #endif
