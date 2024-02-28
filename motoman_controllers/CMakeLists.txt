@@ -17,7 +17,7 @@ endif()
 set(THIS_PACKAGE_INCLUDE_DEPENDS
     rclcpp
     rclcpp_lifecycle
-    forward_command_controller
+    #forward_command_controller
     pluginlib
     controller_interface
     generate_parameter_library
