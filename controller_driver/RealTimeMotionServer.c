@@ -1029,10 +1029,10 @@ static void Ros_RealTimeMotionServer_IncMoveLoopStart(Controller* controller)
 	static bool stateEntry;
 
 	// Stop watch #TODO remove after testing
-	void * stopWatch = mpStopWatchCreate(251);	// stopWatch
-	mpStopWatchReset(stopWatch);				// stopWatch
+	//void * stopWatch = mpStopWatchCreate(251);	// stopWatch
+	//mpStopWatchReset(stopWatch);				// stopWatch
 	//mpStopWatchStart(stopWatch);				// stopWatch
-	sw_current = 0;
+	//sw_current = 0;
 	//static UINT8 sw_counter  = 0;
 	//static float sw_results[250];
 	//static double sw_final_result = 0;
@@ -1131,13 +1131,14 @@ static void Ros_RealTimeMotionServer_IncMoveLoopStart(Controller* controller)
 	if (bRet) 
 	{
 		Db_Print("[RT] controller active.\n");
-		rtMsgSend.header.msg_code = CODE_CONFIRM;
-		_Ros_RealTimeMotionServer_SendUdpMsg();
+		// rtMsgSend.header.msg_code = CODE_CONFIRM;
+		// _Ros_RealTimeMotionServer_SendUdpMsg();
 	}
 	// Exit on unsuccessful attempt
 	else 
 	{
 		Db_Print("[RT] failed to start controller. Exit.\n");
+		rtMsgSend.header.msg_state = STATE_ERROR_CONTROLLER;
 		rtMsgSend.header.msg_code = Ros_Controller_GetNotReadySubcode(controller) - (ROS_RESULT_NOT_READY_UNSPECIFIED - CODE_UNSPECIFIED);
 		_Ros_RealTimeMotionServer_SendUdpMsg();
 		goto exitTask;
@@ -1147,12 +1148,13 @@ static void Ros_RealTimeMotionServer_IncMoveLoopStart(Controller* controller)
 	readTimeout.tv_sec = 0;
 	readTimeout.tv_usec = REALTIME_MOTION_TIMEOUT_MS * 1000;
 
-	// Send initial message
-	_Ros_RealTimeMotionServer_SetStateMsg(controller, &rtState, &sequence);
-	_Ros_RealTimeMotionServer_SendUdpMsg();
 
 	// Set idle state
 	Ros_RealTimeMotionServer_SetState(STATE_IDLE, &rtState, &stateEntry);
+	
+	// Send initial message
+	_Ros_RealTimeMotionServer_SetStateMsg(controller, &rtState, &sequence);
+	_Ros_RealTimeMotionServer_SendUdpMsg();
 
 	Db_Print("[RT] Starting control loop with cycle time: %u ms\n", controller->interpolPeriod);
 
@@ -1177,7 +1179,7 @@ static void Ros_RealTimeMotionServer_IncMoveLoopStart(Controller* controller)
 		// --------- receive cmd from pc ---------
 		msgReceived = _Ros_RealTimeMotionServer_GetUdpMsg();
 		
-		mpStopWatchStart(stopWatch);	// stopWatch
+		//mpStopWatchStart(stopWatch);	// stopWatch
 
 		if(!msgReceived)
 		{	
@@ -1376,8 +1378,8 @@ static void Ros_RealTimeMotionServer_IncMoveLoopStart(Controller* controller)
 		// 	memset(sw_results, 0, 250);
 		// }
 
-		mpStopWatchStop(stopWatch);		// stopWatch
-		sw_current = mpStopWatchGetTime(stopWatch);
+		// mpStopWatchStop(stopWatch);		// stopWatch
+		// sw_current = mpStopWatchGetTime(stopWatch);
 
 		// --------- send state to pc ---------
 
