@@ -1,5 +1,11 @@
 #include "motoman_hardware/motoman_hardware.hpp"
 #include "motoman_hardware/simple_message.hpp"
+#include "motoman_hardware/status_server.hpp"
+#include "motoman_hardware/udp_rt_protocol.h"
+#include <hardware_interface/types/hardware_interface_return_values.hpp>
+#include <mutex>
+#include <rclcpp/logging.hpp>
+#include <rclcpp/node.hpp>
 #include <unistd.h>
 
 namespace motoman_hardware
@@ -7,7 +13,7 @@ namespace motoman_hardware
 
 // Default constructor
 MotomanHardware::MotomanHardware() :
-    logger(rclcpp::get_logger("MotomanHardware"))
+    logger(rclcpp::get_logger("motoman_hardware"))
 {
     // Bind shutdown function, waiting for proper fix. See https://github.com/ros-controls/ros2_control/issues/472 
     rclcpp::on_shutdown(std::bind(&MotomanHardware::shutdown_helper, this));
@@ -95,9 +101,7 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
         return hardware_interface::CallbackReturn::ERROR;
     }
 
-    // Set current position as first hardware command
-    init_hw_commands = false;
-    initial_controller_commands = false;
+
 
     // check configuration
     for (const hardware_interface::ComponentInfo & joint : info_.joints) {
@@ -203,12 +207,6 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
     // udp_timeout.tv_nsec = UDP_TIMEOUT_NS;
 
 
-    // clear msgs
-    memset(&rtMsgSend_, 0, RT_MSG_CMD_SIZE);
-    memset(&rtMsgSend_, 0, RT_MSG_STATE_SIZE);
-    rtMsgState_ = udp_rt_message::STATE_UNDEFINED;
-    rtMsgCode_ = udp_rt_message::CODE_UNDEFINED;
-
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 
@@ -248,6 +246,12 @@ hardware_interface::CallbackReturn MotomanHardware::on_configure(const rclcpp_li
     // Setup robot status server
     set_robot_status_thread(THREAD_STATE::START);
 
+    // Clear msgs
+    memset(&rtMsgSend_, 0, RT_MSG_CMD_SIZE);
+    memset(&rtMsgRecv_, 0, RT_MSG_STATE_SIZE);
+
+    // Set current position as first hardware command
+    //initial_controller_commands = false;
 
     RCLCPP_INFO(logger, "Hardware configured.");
     return hardware_interface::CallbackReturn::SUCCESS;
@@ -269,7 +273,7 @@ hardware_interface::CallbackReturn MotomanHardware::on_deactivate(const rclcpp_l
 
     _is_deactivated = true;
 
-    RCLCPP_WARN(logger, "Successfully deactivated!");
+    // RCLCPP_WARN(logger, "Successfully deactivated!");
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 
@@ -278,7 +282,10 @@ hardware_interface::CallbackReturn MotomanHardware::on_activate(const rclcpp_lif
 {
     RCLCPP_INFO(logger, "Starting ...please wait...");
 
+
     // set default values
+    robot_controller_initialized = false;
+
     for (auto i = 0u; i < joints_size; i++)
     {
         if (std::isnan(hw_pos_set[i]))
@@ -297,42 +304,87 @@ hardware_interface::CallbackReturn MotomanHardware::on_activate(const rclcpp_lif
         }
     }
 
+
     // Request robot controller
     if(send_tcp_motion_request(simple_message::SmCommandType::ROS_CMD_START_RT_MODE) != REQUEST_RETURN_TYPE::SUCCESS) {
         RCLCPP_ERROR(logger, "Error in TCP request. ERRNO: %d", errno);
         return CallbackReturn::FAILURE;
     }
 
-    // Send controller the UDP client ip
-    bytesSend = send(udp_socket_fd, &rtMsgSend_, RT_MSG_CMD_SIZE, 0);
+    // set msgs
+    udp_rt_message::RtMsg start_msg;
+    memset(&start_msg, 0, RT_MSG_CMD_SIZE);
+    start_msg.header.msg_state = udp_rt_message::STATE_INITIALIZE;
+    start_msg.header.msg_code = udp_rt_message::CODE_UNDEFINED;
 
-    // Wait for response
-    retval = poll(&pfds, (unsigned long)1, 10);
-    if (retval == -1) {
-        RCLCPP_ERROR(logger, "[UDP] init failed. ERRNO: %d", errno);
-        return CallbackReturn::ERROR;
-    }
-    else if (retval == 0) {
-        // Timeout
-        RCLCPP_ERROR(logger, "[UDP] init failed. Timeout");
-        return CallbackReturn::ERROR;
-    }
-    if (pfds.revents != POLL_IN) {
-        RCLCPP_ERROR(logger, "[UDP] init got event: %d", pfds.revents);
-        return CallbackReturn::ERROR;
-    }
+    // Send controller the UDP client ip
+    bytesSend = send(udp_socket_fd, &start_msg, RT_MSG_CMD_SIZE, 0);
+
+    // clear message
+    memset(&rtMsgRecv_, 0, RT_MSG_STATE_SIZE);
+
+    // receive UDP message
     bytesRecv = recv(udp_socket_fd, &rtMsgRecv_, RT_MSG_STATE_SIZE, 0);
 
-    // Check if controller started successfully
-    if(rtMsgRecv_.header.msg_code != udp_rt_message::CODE_CONFIRM) {
-        RCLCPP_ERROR(logger, "Controller not started. ERROR: %d", rtMsgRecv_.header.msg_code);
-        return CallbackReturn::ERROR;
+    // Initialize robot controller
+    if (rtMsgRecv_.header.msg_state == udp_rt_message::STATE_IDLE) {
+        // Init commands: (set current robot joit angles as first commands)
+        {
+            //std::lock_guard<std::mutex> lock(start_mutex);
+            for(uint8_t i = 0; i < joints_size; i++)
+            {
+                hw_commands[i] = rtMsgRecv_.body.state[0].pos_fb[i];
+                hw_cmd_initial[i] = rtMsgRecv_.body.state[0].pos_fb[i];
+                hw_cmd_prev[i] = rtMsgRecv_.body.state[0].pos_fb[i];
+            }
+            //start_signal.store(StartSignalIndicator::SUCCESS);
+        }
+        // Signal activation thread
+        //start_condition.notify_one();
+        // Set initialization signal
+        robot_controller_initialized = true;
+        RCLCPP_INFO(logger, "activation done");
+        return CallbackReturn::SUCCESS;
     }
+    else if (rtMsgRecv_.header.msg_state == udp_rt_message::STATE_ERROR_CONTROLLER) {
+        RCLCPP_ERROR(logger, "ROBOT ERROR. CODE: %d", rtMsgRecv_.header.msg_code);
+        // std::unique_lock<std::mutex> lock(start_mutex);
+        // start_signal.store(StartSignalIndicator::FAILURE);
+        // start_condition.notify_one();
+    }
+    return CallbackReturn::FAILURE;
+    
+
+    // Wait for robot to become ready
+    // start_signal.store(StartSignalIndicator::NONE);
+    // std::unique_lock<std::mutex> lock(start_mutex);
+    // start_condition.wait(lock, 
+        // [&sig=start_signal]{return sig.load() != StartSignalIndicator::NONE;}
+    // );
+
+    // // For testing activation delays
+    // uint16_t hw_start_sec_ = 5;
+    // for (auto i = 0; i < hw_start_sec_; i++)
+    // {
+
+    //     RCLCPP_INFO(rclcpp::get_logger("MotomanHardware"), "%d seconds left...", hw_start_sec_ - i);
+    //     rclcpp::sleep_for(std::chrono::seconds(1));
+    // }
 
 
-    RCLCPP_INFO(logger, "Successfully activated!");
+    // switch (start_signal.load()) {
+    //     case StartSignalIndicator::SUCCESS: 
+    //     {
+    //         RCLCPP_INFO(logger, "Successfully activated!");
+    //         return CallbackReturn::SUCCESS;
+    //     }
+    //     default:
+    //     {
+    //         RCLCPP_ERROR(logger, "Activation failure!");
+    //         return CallbackReturn::ERROR;
+    //     }
+    // }
 
-    return CallbackReturn::SUCCESS;
 }
 
 
@@ -340,48 +392,49 @@ hardware_interface::CallbackReturn MotomanHardware::on_shutdown(const rclcpp_lif
 {
     if(!_is_deactivated) {MotomanHardware::on_deactivate(this->get_state());}
 
-    // Remove fastdds publisher
-    // if (state_data_writer != nullptr) _state_publisher->delete_datawriter(state_data_writer);
-    // if (_state_publisher != nullptr) _state_domain_participant->delete_publisher(_state_publisher);
-    // if (_state_topic != nullptr) _state_domain_participant->delete_topic(_state_topic);
-    // eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->delete_participant(_state_domain_participant);
-
     RCLCPP_WARN(logger, "Shutdown Hardware Interface ...");
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 
 
-hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*time*/, const rclcpp::Duration & period)
+hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
-    
+    // This startup condition is related to https://github.com/ros-controls/ros2_control/pull/1451 not beeing merged.
+    // The flag 'robot_controller_initialized' can be removed as soon as the first read/write is done AFTER on_activation is finished!
+    // This error will only show up if 'robot_description' is loaded through a topic.
+    // RCLCPP_WARN_ONCE(logger, "first read");
+    if (!robot_controller_initialized) {return hardware_interface::return_type::ERROR;}
+
+
     // fd_set server_rfds;
     // FD_ZERO(&server_rfds);
     // FD_SET(udp_socket_fd, &server_rfds);
     
     // block while waiting for response or timeout
     //retval = pselect(udp_socket_fd+1, &server_rfds, NULL, NULL, &udp_timeout, NULL);
-    #define UDP_TIMEOUT_MS 4
-    retval = poll(&pfds, (unsigned long)1, UDP_TIMEOUT_MS);
-    if(retval == -1) {
-        RCLCPP_ERROR(logger, "[UDP] Recv failed. ERRNO: %d", errno);
-        return hardware_interface::return_type::ERROR;
-    }
-    else if(retval == 0) {
-        // Timeout
-        RCLCPP_WARN(logger, "[UDP] Recv timeout %d. NW_S_CNTR: %ld", UDP_TIMEOUT_MS, _nw_success_counter);
-        _nw_miss_counter++;
-    }
-    else {
-        _nw_success_counter++;
-    }
+    // #define UDP_TIMEOUT_MS 4
+    // retval = poll(&pfds, (unsigned long)1, UDP_TIMEOUT_MS);
+    // if(retval == -1) {
+    //     RCLCPP_ERROR(logger, "[UDP] Recv failed. ERRNO: %d", errno);
+    //     return hardware_interface::return_type::ERROR;
+    // }
+    // else if(retval == 0) {
+    //     // Timeout
+    //     RCLCPP_WARN(logger, "[UDP] Recv timeout %d. NW_S_CNTR: %ld", UDP_TIMEOUT_MS, _nw_success_counter);
+    //     _nw_miss_counter++;
+    // }
+    // else {
+    //     _nw_success_counter++;
+    // }
 
-    if(pfds.revents != POLL_IN) {
-        RCLCPP_WARN(logger, "[UDP] got event: %d", pfds.revents);
-    }
+    // if(pfds.revents != POLL_IN) {
+    //     RCLCPP_WARN(logger, "[UDP] got event: %d", pfds.revents);
+    // }
     
-    if(period.nanoseconds() > 4500000) {
-        RCLCPP_INFO(logger, "[HW] read period: %ld ns", period.nanoseconds());
-    }
+    // if(period.nanoseconds() > 4500000) {
+    //     RCLCPP_INFO(logger, "[HW] read period: %ld ns", period.nanoseconds());
+    // }
+
 
     // clear message
     memset(&rtMsgRecv_, 0, RT_MSG_STATE_SIZE);
@@ -405,15 +458,8 @@ hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*tim
     if(rtMsgCode_ != rtMsgRecv_.header.msg_code)
     {
         rtMsgCode_ = rtMsgRecv_.header.msg_code;
-        RCLCPP_ERROR(logger, "Robot CODE: %d", rtMsgCode_);
+        RCLCPP_WARN(logger, "Robot CODE: %d", rtMsgCode_);
     }
-
-    // Publish controller state and code
-    // state_msg.state(rtMsgRecv_.header.msg_state);
-    // state_msg.code(rtMsgRecv_.header.msg_code);
-    // memcpy(_msg_ax_state.data(), rtMsgRecv_.body.state[0].dbg_axs_sync_state, _msg_ax_state.size()*sizeof(uint8_t));
-    // state_msg.axs_sync_state(_msg_ax_state);
-    // state_data_writer->write(&state_msg);
 
     // Set position and velocity to ROS2 control pipeline
     for(uint8_t i = 0; i < joints_size; i++)
@@ -428,18 +474,8 @@ hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*tim
         hw_acc_set[i] = rtMsgRecv_.body.state[0].acc_set[i];
     }
 
-    // #TODO read initial position in 'on_configure' and apply to the hw_commands
-    // Init commands: (set current robot joit angles as first commands)
-    if(!init_hw_commands)
-    {
-        for(uint8_t i = 0; i < joints_size; i++)
-        {
-            hw_commands[i] = rtMsgRecv_.body.state[0].pos_fb[i];
-            hw_cmd_initial[i] = rtMsgRecv_.body.state[0].pos_fb[i];
-            hw_cmd_prev[i] = rtMsgRecv_.body.state[0].pos_fb[i];
-        }
-        init_hw_commands = true;
-    }
+    // Add data tamer here #TODO
+
     
     return hardware_interface::return_type::OK;
 }
@@ -447,6 +483,9 @@ hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*tim
 
 hardware_interface::return_type MotomanHardware::write(const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
+    // Crucial first check. Read and write are called before on_activate is finished!
+    if (!robot_controller_initialized) {return hardware_interface::return_type::ERROR;}
+
     // Set header
     rtMsgSend_.header.msg_state = rtMsgRecv_.header.msg_state;
     rtMsgSend_.header.msg_code = udp_rt_message::CODE_UNDEFINED; // #TODO
@@ -461,8 +500,7 @@ hardware_interface::return_type MotomanHardware::write(const rclcpp::Time & /*ti
         // #TODO handle multiple control groups
         
         // Handle NaN values
-        if(std::isnan(hw_commands[i]))
-        {
+        if (std::isnan(hw_commands[i])) {
             hw_commands[i] = hw_cmd_prev[i];
             RCLCPP_WARN_ONCE(logger, "axis %d: got NaN value", i); 
         }
@@ -472,22 +510,16 @@ hardware_interface::return_type MotomanHardware::write(const rclcpp::Time & /*ti
         hw_cmd_prev[i] = hw_commands[i];
 
         // #TODO remove for new controller software
-        if(!initial_controller_commands && rtMsgSend_.body.command[0].pos[i] != hw_cmd_initial[i])
-        {
-            initial_controller_commands = true;
-            rtMsgSend_.header.msg_state = udp_rt_message::STATE_RUN_IN;
-        }
+        // if(!initial_controller_commands && rtMsgSend_.body.command[0].pos[i] != hw_cmd_initial[i])
+        // {
+        //     initial_controller_commands = true;
+        //     rtMsgSend_.header.msg_state = udp_rt_message::STATE_RUN_IN;
+        // }
 
     }
 
-
-    // std::string s;
-    // for(auto v : command_msg_.body.joint_command_ex.joint_command_ex_data->command) s += std::to_string(v) + " ";
-    // RCLCPP_INFO(logger, "UDP send cmd: %s", s.c_str());
-
-    if(send(udp_socket_fd, &rtMsgSend_, RT_MSG_CMD_SIZE, MSG_CONFIRM) <0)
-    {
-        RCLCPP_ERROR(logger, "UDP send error: %d", errno);
+    if (send(udp_socket_fd, &rtMsgSend_, RT_MSG_CMD_SIZE, MSG_CONFIRM) <0) {
+        RCLCPP_ERROR(logger, "[UDP] send error: %d", errno);
         return hardware_interface::return_type::ERROR;
     }
     
@@ -621,125 +653,47 @@ void MotomanHardware::set_robot_status_thread(THREAD_STATE state)
 {
 	switch (state) {
 	case THREAD_STATE::START:
+    {
+        ros_status_executor_ptr = std::make_shared<rclcpp::executors::StaticSingleThreadedExecutor>();
+        std::weak_ptr<rclcpp::executors::StaticSingleThreadedExecutor> weak_obj(ros_status_executor_ptr);
+        run_robot_status_node.store(true);
 
-		if (!robot_status_data.thread_ptr) {
+		if (!robot_status_thread_ptr) {
             RCLCPP_INFO(logger, "starting robot_status_thread ...");
 
-            
-
-			robot_status_data.thread_ptr = std::unique_ptr<std::thread>(
+			robot_status_thread_ptr = std::unique_ptr<std::thread>(
 				new std::thread(
-					[&robot_status_data=robot_status_data, 
-                        logger=rclcpp::get_logger("RobotStatus"),
-                        &ip_address=ip_address
-                        ]()
+					[
+                        &ip_address = ip_address,
+                        wk_ptr = weak_obj,
+                        &run_thread = run_robot_status_node
+                    ]()
 					{
-						robot_status_data.thread_state = THREAD_STATE::RUN;
-						RCLCPP_INFO_STREAM(logger, "robot_status_thread_id: " << std::this_thread::get_id());
+						auto node = std::make_shared<StateServer>(ip_address, &run_thread);
 
-                        // tcp stack variables                        
-                        struct sockaddr_in tcp_servaddr;
-                        int retval, bytesRecv;
-
-                        // creating tcp socket fd
-                        int tcp_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-                        if (tcp_socket_fd < 0) {
-                            RCLCPP_ERROR(logger, "tcp socket creation failed");
-						    robot_status_data.thread_state = THREAD_STATE::ERROR;
-                            return;
-                        }
-
-                        
-
-                        // set tcp client struct
-                        bzero(&tcp_servaddr, sizeof(tcp_servaddr));
-                        tcp_servaddr.sin_family = AF_INET;
-                        inet_pton(AF_INET, ip_address.c_str(), &(tcp_servaddr.sin_addr.s_addr));
-                        tcp_servaddr.sin_port = htons(TCP_PORT_STATE);
-
-                        // connect the client socket to server socket
-                        if (connect(tcp_socket_fd, (struct sockaddr*)&tcp_servaddr, sizeof(tcp_servaddr)) != 0) {
-                            RCLCPP_ERROR(logger, "tcp failed to connect to port %d. ERRNO: %d", TCP_PORT_MOTION_COMMAND, errno);
-						    robot_status_data.thread_state = THREAD_STATE::ERROR;
-                            return;
-                        }
-
-                        pollfd pfds;
-                        pfds.fd = tcp_socket_fd;
-                        pfds.events = POLL_IN;
-
-						// Running the seperate thread
-                        RCLCPP_INFO(logger, "running robot_status_thread poll cycle");
-						while (robot_status_data.thread_state==THREAD_STATE::RUN) {
-
-                            // Timeout [ms], -1 = wait forever
-                            retval = poll(&pfds, (unsigned long)1, 1000);
-
-                            if (retval == -1) {
-                                RCLCPP_ERROR(logger, "[TCP] Recv failed. ERRNO: %d", errno);
-                                return;
-                            }
-                            else if (retval == 0) {
-                                // Timeout
-                                continue;
-                            }
-                            else {
-                                // Success
-                            }
-                            
-                            if (pfds.revents != POLL_IN) {
-                                RCLCPP_WARN(logger, "[TCP] got event: %d", pfds.revents);
-                            }
-
-                            // Data available to read
-                            bytesRecv = recv(tcp_socket_fd, robot_status_data.msgs.begin(), 
-                                sizeof(simple_message::SmHeader) + sizeof(simple_message::SmPrefix) + sizeof(simple_message::SmBodyRobotStatus), 
-                                MSG_WAITALL);
-                            
-                            if(bytesRecv < 0) {
-                                RCLCPP_ERROR(logger, "[TCP] Recv failed. ERRNO: %d", errno);
-                            }
-                            else if (robot_status_data.msgs.begin()->header.msgType == simple_message::SmMsgType::ROS_MSG_ROBOT_STATUS) {
-                                
-                                //
-
-                                RCLCPP_INFO(logger, "-----------------");
-                                RCLCPP_INFO(logger, "direct_in: %d",
-                                    robot_status_data.msgs.begin()->body.robotStatus.input_direct_in);
-                                RCLCPP_INFO(logger, "drives_powered: %d",
-                                    robot_status_data.msgs.begin()->body.robotStatus.drives_powered);
-                                RCLCPP_INFO(logger, "e_stopped: %d",
-                                    robot_status_data.msgs.begin()->body.robotStatus.e_stopped);
-                                RCLCPP_INFO(logger, "in_error %d",
-                                    robot_status_data.msgs.begin()->body.robotStatus.in_error);
-                                RCLCPP_INFO(logger, "in_motion %d",
-                                    robot_status_data.msgs.begin()->body.robotStatus.in_motion);
-                                RCLCPP_INFO(logger, "mode %d",
-                                    robot_status_data.msgs.begin()->body.robotStatus.mode);
-                                RCLCPP_INFO(logger, "motion_possible %d",
-                                    robot_status_data.msgs.begin()->body.robotStatus.motion_possible);
-
-                            }
-                            else {
-                                RCLCPP_WARN(logger, "UNKNOWN STATUS MSG_TYPE: %d", robot_status_data.msgs.begin()->header.msgType);
-                            }
-						}
-
-
-                        // Disconnect
-                        close(tcp_socket_fd);
+                        auto executor = wk_ptr.lock();
+                        executor->add_node(node);
+                        executor->spin();
+                        executor->remove_node(node);
 					}
 				)
 			);
 		}
 		break;
-
+    }
 	case THREAD_STATE::STOP:
-		if (robot_status_data.thread_state == THREAD_STATE::RUN) {
-			robot_status_data.thread_state = THREAD_STATE::STOP;
-			robot_status_data.thread_ptr->join();
+    {
+		if (robot_status_thread_ptr) {
+            if (ros_status_executor_ptr) {
+                run_robot_status_node.store(false);
+                ros_status_executor_ptr->cancel();
+			    robot_status_thread_ptr->join();
+                // RCLCPP_INFO(logger, "robot_status_thread ended");
+            }
+            else RCLCPP_WARN(logger, "STATUS SERVER NODE ALREADY DEAD");
 		}
 		break;
+    }
 	default:
 		break;
 	}

@@ -3,6 +3,8 @@
 
 
 
+#include <atomic>
+#include <cstdint>
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
 //#include <rclcpp/macros.hpp>
@@ -14,7 +16,6 @@
 
 
 #include <netinet/in.h>
-#include <std_msgs/msg/detail/u_int8__struct.hpp>
 #include <sys/socket.h>
 #include <poll.h>
 #include <arpa/inet.h>
@@ -23,7 +24,6 @@
 #include "motoman_hardware/udp_rt_protocol.h"
 #include "motoman_hardware/visibility_control.h"
 
-#include "std_msgs/msg/u_int8.hpp"
 
 // #include <fastdds/dds/domain/DomainParticipantFactory.hpp>
 // #include <fastdds/dds/domain/DomainParticipant.hpp>
@@ -34,7 +34,9 @@
 // #include <fastdds/dds/publisher/qos/DataWriterQos.hpp>
 #include <thread>
 //#include <fastdds/dds/publisher/DataWriterListener.hpp>
-#include "motoman_hardware/RobotStatePubSubTypes.h"
+// #include "motoman_hardware/RobotStatePubSubTypes.h"
+
+#include "motoman_hardware/status_server.hpp"
 
 namespace motoman_hardware
 {
@@ -50,13 +52,6 @@ enum class REQUEST_RETURN_TYPE {
     SUCCESS,
 };
 
-enum class THREAD_STATE {
-    INIT,
-    START,
-    STOP,
-    RUN,
-    ERROR,
-};
 
 class MotomanHardware : public hardware_interface::SystemInterface
 {
@@ -162,12 +157,14 @@ private:
     std::vector<double> hw_acc_set;     // acc set on robot
                                         // no API to read acc feedback -> derive vel
 
-    bool init_hw_commands, initial_controller_commands;
+    //bool initial_controller_commands;
+    bool robot_controller_initialized;
+
     size_t joints_size;
 
     // State msg publisher
 
-    motoman_description::msg::RobotState state_msg;
+    // motoman_description::msg::RobotState state_msg;
     // eprosima::fastdds::dds::Publisher* _state_publisher = nullptr;
     // eprosima::fastdds::dds::Topic* _state_topic  = nullptr;
     // eprosima::fastdds::dds::DataWriter* state_data_writer = nullptr;
@@ -194,20 +191,13 @@ private:
     uint64_t _nw_miss_counter = 0;
     int retval;
 
-
     // Network send /recv bytes
     ssize_t bytesSend, bytesRecv;
 
-    // Robot status thread - read TCP messages from controller
-    typedef struct {
-        std::unique_ptr<std::thread> thread_ptr;
-        THREAD_STATE thread_state;
-        std::array<simple_message::SimpleMsg, 2> msgs;
-        rclcpp::Publisher<std_msgs::msg::UInt8>::SharedPtr data_publisher_;
-    } ROBOT_STATUS_DATA_t;
-
-    ROBOT_STATUS_DATA_t robot_status_data;
-
+    // Status message node thread
+    std::unique_ptr<std::thread> robot_status_thread_ptr;
+    std::atomic_bool run_robot_status_node;
+    std::shared_ptr<rclcpp::executors::StaticSingleThreadedExecutor> ros_status_executor_ptr;
 };
 
 

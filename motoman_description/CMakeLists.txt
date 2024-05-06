@@ -12,13 +12,11 @@ find_package(ament_cmake REQUIRED)
 # find_package(<dependency> REQUIRED)
 
 ## Create custom robot messages
-#find_package(std_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/RobotState.msg"
   "idl/RobotState.idl"
-  #DEPENDENCIES std_msgs
 )
 
 

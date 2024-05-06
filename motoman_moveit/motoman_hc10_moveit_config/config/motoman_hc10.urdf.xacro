@@ -5,7 +5,6 @@
     <!-- Set parameter -->
     <xacro:arg name="robot_ip" default="192.168.255.1"/>
     <xacro:arg name="use_mock_hardware" default="false"/>
-    <xacro:arg name="mock_sensor_commands" default="false"/>
     <xacro:arg name="sim_gazebo" default="false" />
 
 

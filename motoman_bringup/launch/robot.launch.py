@@ -15,20 +15,17 @@ from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from launch.actions import RegisterEventHandler
 from launch.event_handlers import OnProcessExit
+from launch_ros.descriptions import ParameterValue
 
 
 def generate_launch_description():
     robot_ip_parameter_name = "robot_ip"
     mock_hardware_parameter_name = "use_mock_hardware"
-    mock_sensor_commands_parameter_name = "mock_sensor_commands"
-    load_gripper_parameter_name = "load_gripper"
     use_rviz_parameter_name = "use_rviz"
     namespace_parameter_name = "namespace"
 
     robot_ip = LaunchConfiguration(robot_ip_parameter_name)
-    load_gripper = LaunchConfiguration(load_gripper_parameter_name)
     mock_hardware = LaunchConfiguration(mock_hardware_parameter_name)
-    mock_sensor_commands = LaunchConfiguration(mock_sensor_commands_parameter_name)
     use_rviz = LaunchConfiguration(use_rviz_parameter_name)
     namespace = LaunchConfiguration(namespace_parameter_name)
 
@@ -47,13 +44,6 @@ def generate_launch_description():
     )
     declared_arguments.append(
         DeclareLaunchArgument(
-            load_gripper_parameter_name,
-            default_value="false",
-            description='Use Gripper as an end-effector, otherwise, the robot is loaded '
-                        'without an end-effector.')
-    )
-    declared_arguments.append(
-        DeclareLaunchArgument(
             'namespace',
             default_value='/',
             description='Namespace of launched nodes, useful for multi-robot setup. \
@@ -68,25 +58,17 @@ def generate_launch_description():
             description="Start robot with fake hardware mirroring command to its states.",
         )
     )
-    declared_arguments.append(
-        DeclareLaunchArgument(
-            mock_sensor_commands_parameter_name,
-            default_value="false",
-            description="Enable fake command interfaces for sensors used for simple simulations. \
-            Used only if 'use_mock_hardware' parameter is true.",
-        )
-    )
-    
 
-    # HC10 hardcoded #TODO
-    motoman_xacro_file = os.path.join(get_package_share_directory('motoman_description'), 'robots', 'hc10.xacro')
+    robot_xacro_file = os.path.join(get_package_share_directory('motoman_description'), 'robots', 'hc10dt_b10.xacro')
 
-    robot_description = Command(
-        [FindExecutable(name='xacro'), ' ', motoman_xacro_file, #' hand:=', load_gripper,
-         ' robot_ip:=', robot_ip,
-         ' use_mock_hardware:=', mock_hardware,
-         ' mock_sensor_commands:=', mock_sensor_commands,
-        ])
+    robot_description = ParameterValue( 
+        Command(
+            [FindExecutable(name='xacro'), ' ', robot_xacro_file,
+            ' robot_ip:=', robot_ip,
+            ' use_mock_hardware:=', mock_hardware,
+            ]), 
+        value_type=str)
+
 
     rviz_file = os.path.join(get_package_share_directory('motoman_description'), 'rviz',
                              'visualize_motoman.rviz')
@@ -99,22 +81,22 @@ def generate_launch_description():
         ]
     )
 
-    robot_state_pub_node = Node(
+    robot_state_publisher_node = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
         name='robot_state_publisher',
         namespace=namespace,
         output='screen',
-        parameters=[{'robot_description': robot_description}],
+        parameters=[{"robot_description": robot_description}],
     )
 
     controller_node = Node(
         package='controller_manager',
         executable='ros2_control_node',
-        parameters=[motoman_controllers],
+        # parameters=[motoman_controllers], #TODO remove 'robot_description' as parameter
+        parameters=[{"robot_description": robot_description}, motoman_controllers],
         remappings=[
             ('/controller_manager/robot_description', 'robot_description'),
-            #('joint_states', 'motoman/joint_states')
         ],
         output="screen",
         namespace=namespace,
@@ -133,8 +115,7 @@ def generate_launch_description():
     robot_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        #arguments=['StaticTestController', '--inactive', '--controller-manager', [namespace, 'controller_manager']],
-        arguments=['joint_trajectory_controller', '--controller-manager', [namespace, 'controller_manager']],
+        arguments=['joint_trajectory_controller', '--inactive', '--controller-manager', [namespace, 'controller_manager']],
         namespace=namespace,
     )
 
@@ -146,46 +127,37 @@ def generate_launch_description():
         )
     )
 
-    rviz_node = Node(package='rviz2',
-			executable='rviz2',
-			name='rviz2',
-			arguments=['--display-config', rviz_file],
-			condition=IfCondition(use_rviz),
-            namespace=namespace,
-	)
-    
-
-
-    gripper_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([PathJoinSubstitution([FindPackageShare('motoman_gripper'), 'launch', 'gripper.launch.py'])]),
-        launch_arguments={robot_ip_parameter_name: robot_ip}.items(),
-        condition=IfCondition(load_gripper)
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        arguments=['--display-config', rviz_file],
+        condition=IfCondition(use_rviz),
+        namespace=namespace,
     )
+
 
     cartesian_motion_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=["cartesian_motion_controller", "--inactive", "-c", "/controller_manager"],
     )
+
+
     motion_control_handle_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=["motion_control_handle", "--inactive", "-c", "/controller_manager"],
     )
 
+
     # ------------------ NODES ------------------
     nodes = [
         controller_node,
-        robot_state_pub_node,
+        robot_state_publisher_node,
         joint_state_broadcaster_spawner,
-        delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
-        # RVIZ
+        # delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
         rviz_node,
-        # Gripper
-        gripper_launch,
-        # # Cartesian motion controller
-        # cartesian_motion_controller_spawner,
-        # motion_control_handle_spawner,   
     ]
 
     return LaunchDescription(declared_arguments + nodes)

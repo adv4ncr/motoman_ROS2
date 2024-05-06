@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.8)
 project(motoman_hardware)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS on)
+
 # Default to C++17
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
@@ -17,9 +19,10 @@ find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
-find_package(fastrtps REQUIRED)
-find_package(fastcdr REQUIRED)
+# find_package(fastrtps REQUIRED)
+# find_package(fastcdr REQUIRED)
 find_package(motoman_description REQUIRED)
+find_package(motoman_msgs REQUIRED)
 
 ## Add RobotState message lib
 # message(STATUS "Configuring RobotState...")
@@ -35,15 +38,16 @@ add_library(
   ${PROJECT_NAME}
   SHARED
   src/motoman_hardware.cpp
-  src/RobotStatePubSubTypes.cxx
-  src/RobotState.cxx
+  src/status_server.cpp
+  # src/RobotStatePubSubTypes.cxx
+  # src/RobotState.cxx
 )
 
-target_link_libraries(
-  ${PROJECT_NAME}
-  fastrtps
-  fastcdr
-)
+# target_link_libraries(
+#   ${PROJECT_NAME}
+#   fastrtps
+#   fastcdr
+# )
 
 target_include_directories(
   ${PROJECT_NAME}
@@ -58,6 +62,7 @@ ament_target_dependencies(
   rclcpp
   rclcpp_lifecycle
   motoman_description
+  motoman_msgs
 )
 
 #get_target_property(OUT ${PROJECT_NAME} LINK_LIBRARIES)
