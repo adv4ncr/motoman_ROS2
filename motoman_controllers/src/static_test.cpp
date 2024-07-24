@@ -76,7 +76,8 @@ controller_interface::CallbackReturn StaticTest::on_configure(const rclcpp_lifec
 	constexpr double _v0 = 0 * M_PI/180.;
 	constexpr double _a0 = 1250 * M_PI/180.;
 
-	motion_generators::Ramp gen(_p0, _v0, _a0);
+	motion_generators::Step gen(_p0);
+	// motion_generators::Ramp gen(_p0, _v0, _a0);
 	//motion_generators::Sine gen(_p0, _v0, _a0);
 	//motion_generators::RealData gen("my_data.csv");
 
@@ -272,7 +273,8 @@ controller_interface::return_type StaticTest::update(const rclcpp::Time & /*time
 			command_interfaces_[_axs].set_value(back_to_init_pos[_counter_val_back]);
 		}
 		_counter_val_back++;	
-	}	
+	}
+	else return controller_interface::return_type::ERROR;
 	
 	return controller_interface::return_type::OK;
 }

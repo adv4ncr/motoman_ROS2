@@ -27,6 +27,8 @@ controller_manager:
     motion_control_handle:
       type: cartesian_controller_handles/MotionControlHandle
 
+    robot_capture_handle:
+      type: eule_capture/RobotCapture
 
 JointGroupPositionController:
   ros__parameters:
@@ -118,3 +120,10 @@ motion_control_handle:
       - joint_4_r
       - joint_5_b
       - joint_6_t
+
+robot_capture_handle:
+  ros__parameters:
+    is_async: false
+    robot_base_frame: "base_link" 
+    robot_tool_frame: "tool0"
+    get_fk_pose: true

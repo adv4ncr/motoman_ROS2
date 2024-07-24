@@ -7,6 +7,7 @@
 #include <rclcpp/logging.hpp>
 #include <rclcpp/node.hpp>
 #include <unistd.h>
+#include <stdexcept>
 
 namespace motoman_hardware
 {
@@ -159,6 +160,36 @@ hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_inter
         // 2 position states (set, feedback)
         // 2 velocity states (set, feedback)
     }
+
+    // Get maximum increment
+    auto constexpr _param_ROBOT_INC_MAX_FACTOR = "axis_increment_factor";
+    auto _max_inc_str = info_.hardware_parameters[_param_ROBOT_INC_MAX_FACTOR];
+    try {
+        ROBOT_INC_MAX_FACTOR = std::stod(_max_inc_str);
+        if (ROBOT_INC_MAX_FACTOR < 0 || ROBOT_INC_MAX_FACTOR > 1.0) {
+            throw std::out_of_range("Parameter out of range [0.1, 1.0]");
+        }
+    } catch (const std::exception& e) {
+        RCLCPP_ERROR(logger, "Error converting parameter: %s", _param_ROBOT_INC_MAX_FACTOR);
+        return hardware_interface::CallbackReturn::FAILURE;
+    }
+
+    // Get maximum acceleration
+    auto constexpr _param_ROBOT_ACC_MAX_FACTOR = "axis_acceleration_factor";
+    auto _max_acc_str = info_.hardware_parameters[_param_ROBOT_ACC_MAX_FACTOR];
+    try {
+        ROBOT_ACC_MAX_FACTOR = std::stod(_max_acc_str);
+        if (ROBOT_ACC_MAX_FACTOR < 0 || ROBOT_ACC_MAX_FACTOR > 1.0) {
+            throw std::out_of_range("Parameter out of range [0.01, 1.0]");
+            return hardware_interface::CallbackReturn::FAILURE;
+        }
+    } catch (const std::exception& e) {
+        RCLCPP_ERROR(logger, "Error converting parameter: %s", _param_ROBOT_ACC_MAX_FACTOR);
+    }
+
+    RCLCPP_INFO(logger, "Robot axis_increment_factor: %f\taxis_acceleration_factor: %f",
+        ROBOT_INC_MAX_FACTOR, ROBOT_ACC_MAX_FACTOR
+    );
 
     // get udp ip address and port
     ip_address = info_.hardware_parameters["udp_ip_address"];
@@ -411,7 +442,7 @@ hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*tim
     // FD_SET(udp_socket_fd, &server_rfds);
     
     // block while waiting for response or timeout
-    //retval = pselect(udp_socket_fd+1, &server_rfds, NULL, NULL, &udp_timeout, NULL);
+    // retval = pselect(udp_socket_fd+1, &server_rfds, NULL, NULL, &udp_timeout, NULL);
     // #define UDP_TIMEOUT_MS 4
     // retval = poll(&pfds, (unsigned long)1, UDP_TIMEOUT_MS);
     // if(retval == -1) {
@@ -422,6 +453,7 @@ hardware_interface::return_type MotomanHardware::read(const rclcpp::Time & /*tim
     //     // Timeout
     //     RCLCPP_WARN(logger, "[UDP] Recv timeout %d. NW_S_CNTR: %ld", UDP_TIMEOUT_MS, _nw_success_counter);
     //     _nw_miss_counter++;
+    //     // return hardware_interface::return_type::ERROR;
     // }
     // else {
     //     _nw_success_counter++;
@@ -493,7 +525,7 @@ hardware_interface::return_type MotomanHardware::write(const rclcpp::Time & /*ti
 
     // Set speed
     rtMsgSend_.body.command[0].INC_FACTOR = ROBOT_INC_MAX_FACTOR;
-    rtMsgSend_.body.command[0].ACC_FACTOR = ROBOT_INC_ACC_FACTOR;
+    rtMsgSend_.body.command[0].ACC_FACTOR = ROBOT_ACC_MAX_FACTOR;
 
     for(uint8_t i = 0; i < joints_size; i++)
     {
@@ -535,13 +567,13 @@ std::vector<hardware_interface::StateInterface> MotomanHardware::export_state_in
     for (size_t i = 0; i < info_.joints.size(); i++)
     {
         state_interfaces.emplace_back(hardware_interface::StateInterface(
-            info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_pos_set[i]));
+            info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_pos_snd[i]));
         state_interfaces.emplace_back(hardware_interface::StateInterface(
             info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_vel_set[i]));
 
         // Additional position state interfaces
         state_interfaces.emplace_back(hardware_interface::StateInterface(
-            info_.joints[i].name, "pos_snd", &hw_pos_snd[i]));
+            info_.joints[i].name, "pos_snd", &hw_pos_set[i]));
         state_interfaces.emplace_back(hardware_interface::StateInterface(
             info_.joints[i].name, "pos_cmd", &hw_pos_cmd[i]));
         state_interfaces.emplace_back(hardware_interface::StateInterface(

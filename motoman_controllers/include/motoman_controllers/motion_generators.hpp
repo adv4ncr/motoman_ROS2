@@ -117,6 +117,16 @@ private:
 
 };
 
+class Step {
+public:
+    Step(double pos) : _p(pos) {}
+    void get_values(const double &/*t*/, double &p, double &/*v*/, double &/*a*/)
+    { p = _p; }
+
+private:
+    double _p;
+};
+
 class CSVreader
 {
 public:

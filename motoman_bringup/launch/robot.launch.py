@@ -23,11 +23,15 @@ def generate_launch_description():
     mock_hardware_parameter_name = "use_mock_hardware"
     use_rviz_parameter_name = "use_rviz"
     namespace_parameter_name = "namespace"
+    axis_increment_factor_parameter_name = "axis_increment_factor"
+    axis_acceleration_factor_parameter_name = "axis_acceleration_factor"
 
     robot_ip = LaunchConfiguration(robot_ip_parameter_name)
     mock_hardware = LaunchConfiguration(mock_hardware_parameter_name)
     use_rviz = LaunchConfiguration(use_rviz_parameter_name)
     namespace = LaunchConfiguration(namespace_parameter_name)
+    axis_increment_factor = LaunchConfiguration(axis_increment_factor_parameter_name)
+    axis_acceleration_factor = LaunchConfiguration(axis_acceleration_factor_parameter_name)
 
     declared_arguments = []
 
@@ -58,6 +62,20 @@ def generate_launch_description():
             description="Start robot with fake hardware mirroring command to its states.",
         )
     )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            axis_increment_factor_parameter_name,
+            default_value="0.5",
+            description="Set increment factor for all robot axis.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            axis_acceleration_factor_parameter_name,
+            default_value="0.05",
+            description="Set acceleration factor for all robot axis.",
+        )
+    )
 
     robot_xacro_file = os.path.join(get_package_share_directory('motoman_description'), 'robots', 'hc10dt_b10.xacro')
 
@@ -66,6 +84,8 @@ def generate_launch_description():
             [FindExecutable(name='xacro'), ' ', robot_xacro_file,
             ' robot_ip:=', robot_ip,
             ' use_mock_hardware:=', mock_hardware,
+            ' axis_increment_factor:=', axis_increment_factor,
+            ' axis_acceleration_factor:=', axis_acceleration_factor,
             ]), 
         value_type=str)
 
@@ -149,6 +169,18 @@ def generate_launch_description():
         executable="spawner",
         arguments=["motion_control_handle", "--inactive", "-c", "/controller_manager"],
     )
+    
+    robot_capture_handle_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["robot_capture_handle", "-c", "/controller_manager"],
+    )
+
+    static_test_handle_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["StaticTestController", "--inactive", "-c", "/controller_manager"],
+    )
 
 
     # ------------------ NODES ------------------
@@ -156,6 +188,8 @@ def generate_launch_description():
         controller_node,
         robot_state_publisher_node,
         joint_state_broadcaster_spawner,
+        static_test_handle_spawner,
+        robot_capture_handle_spawner,
         # delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
         rviz_node,
     ]

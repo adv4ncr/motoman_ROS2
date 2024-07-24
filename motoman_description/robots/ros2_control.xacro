@@ -3,6 +3,8 @@
     <xacro:macro name="motoman_ros2_control" params="
             ns
             robot_ip
+            axis_increment_factor
+            axis_acceleration_factor
             use_mock_hardware:=^|false
             sim_gazebo:=^|false
             ">
@@ -28,7 +30,8 @@
                 <xacro:unless value="${use_mock_hardware or sim_gazebo}">
                     <plugin>motoman_hardware/MotomanHardware</plugin>
                     <param name="udp_ip_address">${robot_ip}</param>
-                    <param name="udp_port">50244</param>
+                    <param name="axis_increment_factor">${axis_increment_factor}</param>
+                    <param name="axis_acceleration_factor">${axis_acceleration_factor}</param>
                 </xacro:unless>
                 <!-- <param name="example_param_hw_start_duration_sec">2.0</param>
                 <param name="example_param_hw_stop_duration_sec">3.0</param>

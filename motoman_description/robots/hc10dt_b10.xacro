@@ -2,10 +2,12 @@
 <robot name="motoman_hc10dt_b10" xmlns:xacro="http://ros.org/wiki/xacro">
 
   <xacro:arg name="arm_id" default=""/> <!-- Name of this robot, not used yet -->
-  <xacro:arg name="robot_ip" default=""/> <!-- IP address or hostname of the robot" -->
+  <xacro:arg name="robot_ip" default=""/> <!-- IP address or hostname of the robot -->
+  <xacro:arg name="axis_increment_factor" default=""/> <!-- Set increment factor for all robot axis -->
+  <xacro:arg name="axis_acceleration_factor" default=""/> <!-- Set acceleration factor for all robot axis -->
   <xacro:arg name="use_mock_hardware" default="false"/> <!-- Mirror commands to hardware states -->
   <xacro:arg name="sim_gazebo" default="false" /> <!-- Use gazebo simulation-->
-  
+
 
   <xacro:include filename="$(find motoman_description)/robots/hc10dt_b10_macro.xacro" />
   <xacro:motoman_hc10dt_b10 prefix=""/>
@@ -14,6 +16,8 @@
   <xacro:motoman_ros2_control 
     ns="$(arg arm_id)" 
     robot_ip="$(arg robot_ip)"
+    axis_increment_factor="$(arg axis_increment_factor)"
+    axis_acceleration_factor="$(arg axis_acceleration_factor)"
     use_mock_hardware="$(arg use_mock_hardware)"
     sim_gazebo="$(arg sim_gazebo)"
   />

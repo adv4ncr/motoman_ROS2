@@ -44,8 +44,8 @@ namespace motoman_hardware
 #define TCP_TIMEOUT_S 1 // in s
 #define UDP_TIMEOUT_NS 500000 // in ns = 0.5 ms
 
-#define ROBOT_INC_MAX_FACTOR 0.5
-#define ROBOT_INC_ACC_FACTOR 0.02
+// #define ROBOT_INC_MAX_FACTOR 0.5
+// #define ROBOT_INC_ACC_FACTOR 0.02
 
 enum class REQUEST_RETURN_TYPE {
     ERROR,
@@ -156,6 +156,8 @@ private:
     std::vector<double> hw_acc_cmd;     // acc commanded on robot
     std::vector<double> hw_acc_set;     // acc set on robot
                                         // no API to read acc feedback -> derive vel
+
+    double ROBOT_INC_MAX_FACTOR, ROBOT_ACC_MAX_FACTOR;
 
     //bool initial_controller_commands;
     bool robot_controller_initialized;
