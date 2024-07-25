@@ -27,6 +27,9 @@
                 <xacro:if value="${use_mock_hardware}">
                     <plugin>mock_components/GenericSystem</plugin>
                 </xacro:if>
+                <xacro:if value="${sim_gazebo}">
+                    <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+                </xacro:if>
                 <xacro:unless value="${use_mock_hardware or sim_gazebo}">
                     <plugin>motoman_hardware/MotomanHardware</plugin>
                     <param name="udp_ip_address">${robot_ip}</param>
