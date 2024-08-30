@@ -562,6 +562,7 @@ hardware_interface::return_type MotomanHardware::write(const rclcpp::Time & /*ti
 std::vector<hardware_interface::StateInterface> MotomanHardware::export_state_interfaces()
 {
     std::vector<hardware_interface::StateInterface> state_interfaces;
+    state_interfaces.reserve(info_.joints.size() * info_.joints[0].state_interfaces.size());
 
     // Main state interfaces
     for (size_t i = 0; i < info_.joints.size(); i++)
@@ -569,19 +570,17 @@ std::vector<hardware_interface::StateInterface> MotomanHardware::export_state_in
         state_interfaces.emplace_back(hardware_interface::StateInterface(
             info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_pos_snd[i]));
         state_interfaces.emplace_back(hardware_interface::StateInterface(
-            info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_vel_set[i]));
-
-        // Additional position state interfaces
-        state_interfaces.emplace_back(hardware_interface::StateInterface(
-            info_.joints[i].name, "pos_snd", &hw_pos_set[i]));
-        state_interfaces.emplace_back(hardware_interface::StateInterface(
             info_.joints[i].name, "pos_cmd", &hw_pos_cmd[i]));
+        state_interfaces.emplace_back(hardware_interface::StateInterface(
+            info_.joints[i].name, "pos_set", &hw_pos_set[i]));
         state_interfaces.emplace_back(hardware_interface::StateInterface(
             info_.joints[i].name, "pos_fdb", &hw_pos_fb[i]));
 
         // Additional velocity state interfaces
         state_interfaces.emplace_back(hardware_interface::StateInterface(
             info_.joints[i].name, "vel_cmd", &hw_vel_cmd[i]));
+        state_interfaces.emplace_back(hardware_interface::StateInterface(
+            info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_vel_set[i]));
         state_interfaces.emplace_back(hardware_interface::StateInterface(
             info_.joints[i].name, "vel_fdb", &hw_vel_fb[i]));
 
