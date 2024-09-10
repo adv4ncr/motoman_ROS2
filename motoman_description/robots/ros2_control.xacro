@@ -5,7 +5,7 @@
             robot_ip
             axis_increment_factor
             axis_acceleration_factor
-            use_mock_hardware:=^|false
+            mock_hardware:=^|false
             sim_gazebo:=^|false
             ">
         <ros2_control name="MotomanHardware" type="system">
@@ -24,13 +24,13 @@
 
 
             <hardware>
-                <xacro:if value="${use_mock_hardware}">
+                <xacro:if value="${mock_hardware}">
                     <plugin>mock_components/GenericSystem</plugin>
                 </xacro:if>
                 <xacro:if value="${sim_gazebo}">
                     <plugin>gz_ros2_control/GazeboSimSystem</plugin>
                 </xacro:if>
-                <xacro:unless value="${use_mock_hardware or sim_gazebo}">
+                <xacro:unless value="${mock_hardware or sim_gazebo}">
                     <plugin>motoman_hardware/MotomanHardware</plugin>
                     <param name="udp_ip_address">${robot_ip}</param>
                     <param name="axis_increment_factor">${axis_increment_factor}</param>
@@ -45,13 +45,13 @@
                 <!-- <param name="min">-1</param> -->
                 <!-- <param name="max">1</param> -->
                 </command_interface>
-                <state_interface name="position"> <!--pos_set-->
+                <state_interface name="position">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="velocity"> <!--vel_set-->
+                <state_interface name="velocity">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_snd"> <!--pos sent to robot-->
+                <state_interface name="pos_snd">
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="pos_cmd">
@@ -78,13 +78,13 @@
                 <!-- <param name="min">-1</param> -->
                 <!-- <param name="max">1</param> -->
                 </command_interface>
-                <state_interface name="position"> <!--pos_set-->
+                <state_interface name="position">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="velocity"> <!--vel_set-->
+                <state_interface name="velocity">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_snd"> <!--pos sent to robot-->
+                <state_interface name="pos_snd">
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="pos_cmd">
@@ -111,13 +111,13 @@
                 <!-- <param name="min">-1</param> -->
                 <!-- <param name="max">1</param> -->
                 </command_interface>
-                <state_interface name="position"> <!--pos_set-->
-                    <param name="initial_value">0.7</param>
-                </state_interface>
-                <state_interface name="velocity"> <!--vel_set-->
+                <state_interface name="position">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_snd"> <!--pos sent to robot-->
+                <state_interface name="velocity">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="pos_snd">
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="pos_cmd">
@@ -144,13 +144,13 @@
                 <!-- <param name="min">-1</param> -->
                 <!-- <param name="max">1</param> -->
                 </command_interface>
-                <state_interface name="position"> <!--pos_set-->
-                    <param name="initial_value">0.7</param>
-                </state_interface>
-                <state_interface name="velocity"> <!--vel_set-->
+                <state_interface name="position">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_snd"> <!--pos sent to robot-->
+                <state_interface name="velocity">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="pos_snd">
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="pos_cmd">
@@ -177,13 +177,13 @@
                 <!-- <param name="min">-1</param> -->
                 <!-- <param name="max">1</param> -->
                 </command_interface>
-                <state_interface name="position"> <!--pos_set-->
-                    <param name="initial_value">0.7</param>
+                <state_interface name="position">
+                    <param name="initial_value">1.5707963268</param>
                 </state_interface>
-                <state_interface name="velocity"> <!--vel_set-->
+                <state_interface name="velocity">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_snd"> <!--pos sent to robot-->
+                <state_interface name="pos_snd">
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="pos_cmd">
@@ -210,13 +210,13 @@
                 <!-- <param name="min">-1</param> -->
                 <!-- <param name="max">1</param> -->
                 </command_interface>
-                <state_interface name="position"> <!--pos_set-->
+                <state_interface name="position">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="velocity"> <!--vel_set-->
+                <state_interface name="velocity">
                     <param name="initial_value">0.0</param>
                 </state_interface>
-                <state_interface name="pos_snd"> <!--pos sent to robot-->
+                <state_interface name="pos_snd">
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="pos_cmd">
