@@ -568,11 +568,11 @@ std::vector<hardware_interface::StateInterface> MotomanHardware::export_state_in
     for (size_t i = 0; i < info_.joints.size(); i++)
     {
         state_interfaces.emplace_back(hardware_interface::StateInterface(
-            info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_pos_snd[i]));
+            info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_pos_set[i]));
         state_interfaces.emplace_back(hardware_interface::StateInterface(
             info_.joints[i].name, "pos_cmd", &hw_pos_cmd[i]));
         state_interfaces.emplace_back(hardware_interface::StateInterface(
-            info_.joints[i].name, "pos_set", &hw_pos_set[i]));
+            info_.joints[i].name, "pos_snd", &hw_pos_snd[i]));
         state_interfaces.emplace_back(hardware_interface::StateInterface(
             info_.joints[i].name, "pos_fdb", &hw_pos_fb[i]));
 
