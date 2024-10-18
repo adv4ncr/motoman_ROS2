@@ -2,29 +2,29 @@
 <MotoPlusProject>
   <ProjectName>motoplus_ide_project</ProjectName>
   <FilesInProject>
-    <FileForProject>include\common\SimpleMessageDefinition.h</FileForProject>
-    <FileForProject>src\IoServer.c</FileForProject>
-    <FileForProject>src\CtrlGroup.c</FileForProject>
-    <FileForProject>src\Controller.c</FileForProject>
-    <FileForProject>include\Controller.h</FileForProject>
-    <FileForProject>include\CtrlGroup.h</FileForProject>
-    <FileForProject>include\IoServer.h</FileForProject>
-    <FileForProject>src\MotionServer.c</FileForProject>
-    <FileForProject>include\MotionServer.h</FileForProject>
-    <FileForProject>include\MotoROS.h</FileForProject>
-    <FileForProject>src\mpMain.c</FileForProject>
-    <FileForProject>include\ParameterExtraction.h</FileForProject>
+    <FileForProject>SimpleMessageDefinition.h</FileForProject>
+    <FileForProject>IoServer.c</FileForProject>
+    <FileForProject>CtrlGroup.c</FileForProject>
+    <FileForProject>Controller.c</FileForProject>
+    <FileForProject>Controller.h</FileForProject>
+    <FileForProject>CtrlGroup.h</FileForProject>
+    <FileForProject>IoServer.h</FileForProject>
+    <FileForProject>MotionServer.c</FileForProject>
+    <FileForProject>MotionServer.h</FileForProject>
+    <FileForProject>MotoROS.h</FileForProject>
+    <FileForProject>mpMain.c</FileForProject>
+    <FileForProject>ParameterExtraction.h</FileForProject>
     <FileForProject>ParameterExtraction.yrcmlib</FileForProject>
-    <FileForProject>include\common\ParameterTypes.h</FileForProject>
-    <FileForProject>src\RealTimeMotionServer.c</FileForProject>
-    <FileForProject>include\RealTimeMotionServer.h</FileForProject>
-    <FileForProject>src\SimpleMessageFunctions.c</FileForProject>
-    <FileForProject>include\SimpleMessageFunctions.h</FileForProject>
-    <FileForProject>src\StateServer.c</FileForProject>
-    <FileForProject>include\StateServer.h</FileForProject>
-    <FileForProject>include\udp_rt_protocol.h</FileForProject>
+    <FileForProject>ParameterTypes.h</FileForProject>
+    <FileForProject>RealTimeMotionServer.c</FileForProject>
+    <FileForProject>RealTimeMotionServer.h</FileForProject>
+    <FileForProject>SimpleMessageFunctions.c</FileForProject>
+    <FileForProject>SimpleMessageFunctions.h</FileForProject>
+    <FileForProject>StateServer.c</FileForProject>
+    <FileForProject>StateServer.h</FileForProject>
+    <FileForProject>udp_rt_protocol.h</FileForProject>
   </FilesInProject>
-  <LastFileOpened>include\MotoROS.h</LastFileOpened>
+  <LastFileOpened>MotoROS.h</LastFileOpened>
   <UsrInit>False</UsrInit>
   <ProjectType>Executable</ProjectType>
   <Debug>
