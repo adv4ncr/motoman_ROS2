@@ -36,7 +36,7 @@
 //#include <fastdds/dds/publisher/DataWriterListener.hpp>
 // #include "motoman_hardware/RobotStatePubSubTypes.h"
 
-#include "motoman_hardware/status_server.hpp"
+#include "motoman_hardware/robot_client.hpp"
 
 namespace motoman_hardware
 {

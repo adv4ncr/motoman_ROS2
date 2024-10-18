@@ -4,6 +4,10 @@
 #define ROS_MAX_JOINT 10
 #define MOT_MAX_GR	4
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //----------------
 // Prefix Section
 //----------------
@@ -448,5 +452,8 @@ struct _SimpleMsg
 } __attribute__((__packed__));
 typedef struct _SimpleMsg SimpleMsg;
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif // SIMPLE_MSG_DEFINITION_H

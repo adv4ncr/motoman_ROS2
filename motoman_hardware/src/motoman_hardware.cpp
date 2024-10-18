@@ -1,6 +1,6 @@
 #include "motoman_hardware/motoman_hardware.hpp"
 #include "motoman_hardware/simple_message.hpp"
-#include "motoman_hardware/status_server.hpp"
+#include "motoman_hardware/robot_client.hpp"
 #include "motoman_hardware/udp_rt_protocol.h"
 #include <hardware_interface/types/hardware_interface_return_values.hpp>
 #include <mutex>
@@ -700,7 +700,7 @@ void MotomanHardware::set_robot_status_thread(THREAD_STATE state)
                         &run_thread = run_robot_status_node
                     ]()
 					{
-						auto node = std::make_shared<StateServer>(ip_address, &run_thread);
+						auto node = std::make_shared<RobotClient>(ip_address, &run_thread);
 
                         auto executor = wk_ptr.lock();
                         executor->add_node(node);
