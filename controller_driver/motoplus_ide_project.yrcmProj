@@ -1,43 +1,44 @@
 <?xml version="1.0"?>
 <MotoPlusProject>
-  <ProjectName>YRCIDE</ProjectName>
+  <ProjectName>motoplus_ide_project</ProjectName>
   <FilesInProject>
-    <FileForProject>SimpleMessageFunctions.c</FileForProject>
-    <FileForProject>RealTimeMotionServer.c</FileForProject>
-    <FileForProject>mpMain.c</FileForProject>
-    <FileForProject>MotionServer.c</FileForProject>
+    <FileForProject>SimpleMessageDefinition.h</FileForProject>
     <FileForProject>IoServer.c</FileForProject>
     <FileForProject>CtrlGroup.c</FileForProject>
     <FileForProject>Controller.c</FileForProject>
     <FileForProject>Controller.h</FileForProject>
     <FileForProject>CtrlGroup.h</FileForProject>
     <FileForProject>IoServer.h</FileForProject>
+    <FileForProject>MotionServer.c</FileForProject>
     <FileForProject>MotionServer.h</FileForProject>
     <FileForProject>MotoROS.h</FileForProject>
+    <FileForProject>mpMain.c</FileForProject>
     <FileForProject>ParameterExtraction.h</FileForProject>
+    <FileForProject>ParameterExtraction.yrcmlib</FileForProject>
     <FileForProject>ParameterTypes.h</FileForProject>
+    <FileForProject>RealTimeMotionServer.c</FileForProject>
     <FileForProject>RealTimeMotionServer.h</FileForProject>
+    <FileForProject>SimpleMessageFunctions.c</FileForProject>
     <FileForProject>SimpleMessageFunctions.h</FileForProject>
-    <FileForProject>SimpleMessageDefinition.h</FileForProject>
     <FileForProject>StateServer.c</FileForProject>
     <FileForProject>StateServer.h</FileForProject>
+    <FileForProject>udp_rt_protocol.h</FileForProject>
   </FilesInProject>
-  <LastFileOpened>ParameterTypes.h</LastFileOpened>
+  <LastFileOpened>MotoROS.h</LastFileOpened>
   <UsrInit>False</UsrInit>
   <ProjectType>Executable</ProjectType>
   <Debug>
-    <DebugIP>
-    </DebugIP>
+    <DebugIP>192.168.255.1</DebugIP>
     <DebugUser>MOTOMANrobot</DebugUser>
     <DebugPass>MOTOMANrobot</DebugPass>
   </Debug>
   <Build>
-    <CompileCommand>mpbuilder\gnu\4.3.3-vxworks-6.9\x86-win32\bin\ccpentium.exe -march=atom -nostdlib -fno-builtin -fno-defer-pop -fno-implicit-fp -fno-zero-initialized-in-bss -Wall -Werror-implicit-function-declaration -g -MD -MP -DCPU=_VX_ATOM -DTOOL_FAMILY=gnu -DYRC1000 -DTOOL=gnu -D_WRS_KERNEL -I"~ProjectDir~" -I"~IncludeDir~" -c "~FilePath~" -o "~OutputPath~"
+    <CompileCommand>mpbuilder\gnu\4.3.3-vxworks-6.9\x86-win32\bin\ccpentium.exe -march=atom -nostdlib -fno-builtin -fno-defer-pop -fno-implicit-fp -fno-zero-initialized-in-bss -Wall -Werror-implicit-function-declaration -g -MD -MP -DCPU=_VX_ATOM -DTOOL_FAMILY=gnu -DYRC1000u -DTOOL=gnu -D_WRS_KERNEL -I"~ProjectDir~" -I"~IncludeDir~" -c "~FilePath~" -o "~OutputPath~"
 </CompileCommand>
     <BuildCommand>mpbuilder\gnu\4.3.3-vxworks-6.9\x86-win32\bin\ccpentium.exe -nostdlib -r -WI,-X -WI~FileList~ -o "~OutputPath~"
 </BuildCommand>
-    <IncludeDir>C:\Program Files (x86)\Yaskawa\MotoPlusIDE_YRC\mpbuilder\inc</IncludeDir>
+    <IncludeDir>C:\Program Files (x86)\Yaskawa\MotoPlusIDE_YRCmicro\mpbuilder\inc</IncludeDir>
   </Build>
-  <ProjectFileVersion>v2.4.0</ProjectFileVersion>
+  <ProjectFileVersion>v2.4.1</ProjectFileVersion>
   <ConvertTabs>False</ConvertTabs>
 </MotoPlusProject>

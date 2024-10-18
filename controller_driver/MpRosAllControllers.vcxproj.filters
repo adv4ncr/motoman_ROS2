@@ -78,7 +78,7 @@
     <ClCompile Include="mpMain.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SimpleMessage.c">
+    <ClCompile Include="SimpleMessageFunctions.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="StateServer.c">
@@ -104,7 +104,10 @@
     <ClInclude Include="ParameterExtraction.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SimpleMessage.h">
+    <ClInclude Include="SimpleMessageDefinition.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleMessageFunctions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="StateServer.h">

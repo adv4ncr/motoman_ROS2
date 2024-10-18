@@ -952,19 +952,6 @@ static UINT8 _Ros_RealTimeMotionServer_SetMotion(Controller* controller, enum Ro
 		}
 	}
 
-	// ------------------ TEST PRINT #TODO remove ------------------
-	// TEST #TODO REMOVE
-	static BOOL _printInc;
-	_printInc = FALSE;
-	for (axisNo = 0; axisNo < controller->ctrlGroups[groupNo]->numAxes; axisNo++)
-		if(mData.prevIncSet[axisNo] != 0) _printInc = TRUE;
-	if(_printInc)
-		printf("[RT] P: %ld %ld %ld %ld %ld %ld\n",
-			mData.prevIncSet[0], mData.prevIncSet[1], mData.prevIncSet[2], 
-			mData.prevIncSet[3], mData.prevIncSet[4], mData.prevIncSet[5]);
-
-
-
 	// ------------------ MOVE ROBOT ------------------
 
 	if (Ros_Controller_IsMotionReady(controller) && !controller->bStopMotion) 
@@ -1312,45 +1299,6 @@ static void Ros_RealTimeMotionServer_IncMoveLoopStart(Controller* controller)
 			}
 
 			break;
-		
-		// case STATE_RUN_IN:
-		// 	// Accelerate to synchronized motion
-		// 	if(stateEntry)
-		// 	{
-		// 		// Is there a better way to handle this? E.g. small input buffer on host #TODO
-		// 		// Skip all old msgs
-		// 		static UINT8 _tryCounter;
-		// 		_tryCounter = 0;
-		// 		while (rtMsgRecv.header.msg_sequence != sequence)
-		// 		{
-		// 			Db_Print("[RT] Fixing sequence. Recv: %d. Actual: %d\n", 
-		// 				rtMsgRecv.header.msg_sequence, sequence);
-					
-		// 			if(_tryCounter > 100) // Random value, test #TODO
-		// 			{
-		// 				printf("[RT] failed to get latest message. Sequence: %d MsgSequence: %d\n",
-		// 					sequence, rtMsgRecv.header.msg_sequence);
-		// 				goto exitTask;
-		// 			}
-		// 			_Ros_RealTimeMotionServer_GetUdpMsg();
-		// 			_tryCounter++;
-		// 		}
-
-		// 		stateEntry = false;
-		// 	}
-
-
-		// 	// Exit on all axes in sync
-		// 	if(_Ros_RealTimeMotionServer_SetMotion(controller, RT_MOTION_ACCELERATE) == RT_MOTION_SYNC)
-		// 	{
-		// 		Ros_RealTimeMotionServer_SetState(STATE_RUN, &rtState, &stateEntry);
-		// 	}
-		// 	// Exit on missing msg
-		// 	else if(!msgReceived)
-		// 	{
-		// 		Ros_RealTimeMotionServer_SetState(STATE_RUN_STALL, &rtState, &stateEntry);
-		// 	}
-
 		default:
 			// catching all unused states, should never happen with rtState
 			printf("[RT] UNDEFINED STATE %d. EXIT.\n", rtState);
@@ -1359,28 +1307,6 @@ static void Ros_RealTimeMotionServer_IncMoveLoopStart(Controller* controller)
 		}
 
 		
-		// sw_results[sw_counter++] = sw_current_iter;
-		// if(sw_current_iter > 0.2)
-		// {
-		// 	printf("[RT] SW peak: %f ms\n\r", sw_current_iter);
-		// }
-		
-		// if(sw_counter == 250)
-		// {
-		// 	sw_final_result = 0;
-		// 	for(sw_counter = 0; sw_counter<250; sw_counter++)
-		// 	{
-		// 		sw_final_result += sw_results[sw_counter];
-		// 	}
-		// 	sw_final_result /= 250.0;
-		// 	printf("[RT] SW final result: %lf ms\n\r", sw_final_result);
-		// 	sw_counter = 0;
-		// 	memset(sw_results, 0, 250);
-		// }
-
-		// mpStopWatchStop(stopWatch);		// stopWatch
-		// sw_current = mpStopWatchGetTime(stopWatch);
-
 		// --------- send state to pc ---------
 
 		// #TODO remove

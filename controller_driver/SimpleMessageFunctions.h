@@ -1,9 +1,9 @@
-//MotoROS.h
+// SimpleMessageFunctions.h
 //
 /*
-* Software License Agreement (BSD License)
+* Software License Agreement (BSD License) 
 *
-* Copyright (c) 2017, Yaskawa America, Inc.
+* Copyright (c) 2013, Yaskawa America, Inc.
 * All rights reserved.
 *
 * Redistribution and use in binary form, with or without modification,
@@ -12,7 +12,7 @@
 *       * Redistributions in binary form must reproduce the above copyright
 *       notice, this list of conditions and the following disclaimer in the
 *       documentation and/or other materials provided with the distribution.
-*       * Neither the name of the Yaskawa America, Inc., nor the names
+*       * Neither the name of the Yaskawa America, Inc., nor the names 
 *       of its contributors may be used to endorse or promote products derived
 *       from this software without specific prior written permission.
 *
@@ -29,19 +29,29 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef MOTOROS_H
-#define MOTOROS_H
+#ifndef SIMPLE_MSG_FUNCTIONS_H
+#define SIMPLE_MSG_FUNCTIONS_H
 
-#define APPLICATION_VERSION					"0.1.1"
+#include "SimpleMessageDefinition.h"
 
-#include "MotoPlus.h"
-#include "ParameterExtraction.h"
-#include "CtrlGroup.h"
-#include "SimpleMessageFunctions.h"
-#include "Controller.h"
-#include "IoServer.h"
-#include "MotionServer.h"
-#include "StateServer.h"
-#include "RealTimeMotionServer.h"
+//-------------------
+// Function Section
+//-------------------
 
+extern int Ros_SimpleMsg_JointFeedback(CtrlGroup* ctrlGroup, SimpleMsg* sendMsg);
+extern void Ros_SimpleMsg_JointFeedbackEx_Init(int numberOfGroups, SimpleMsg* sendMsg);
+extern int Ros_SimpleMsg_JointFeedbackEx_Build(int groupIndex, SimpleMsg* src_msgFeedback, SimpleMsg* dst_msgExtendedFeedback);
+
+extern int Ros_SimpleMsg_MotionReply(SimpleMsg* receiveMsg, int result, int subcode, SimpleMsg* replyMsg, int ctrlGrp);
+extern int Ros_SimpleMsg_IoReply(int result, int subcode, SimpleMsg* replyMsg);
+
+//Uncomment the DEBUG definition to enable debug-messages at runtime
+#define DEBUG  1
+
+#ifdef DEBUG
+// #warning Dont forget to disable the DEBUG flag
+// function to dump data structure for debugging
+extern void Ros_SimpleMsg_DumpTrajPtFull(SmBodyJointTrajPtFull* data);
 #endif
+
+#endif // SIMPLE_MSG_FUNCTIONS_H

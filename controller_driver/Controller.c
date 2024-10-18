@@ -377,11 +377,13 @@ void Ros_Controller_ConnectionServer_Start(Controller* controller)
   printf("Controller connection server running\r\n");
 
   //New sockets for server listening to multiple port
-  sdMotionServer = Ros_Controller_OpenTcpSocket(TCP_PORT_MOTION);
-  if (sdMotionServer < 0)
-  {
-    goto closeSockHandle;
-  }
+
+// 	// DEPRECATED. Use RealTimeMotionServer instead
+//   sdMotionServer = Ros_Controller_OpenTcpSocket(TCP_PORT_MOTION);
+//   if (sdMotionServer < 0)
+//   {
+//     goto closeSockHandle;
+//   }
 
   sdStateServer = Ros_Controller_OpenTcpSocket(TCP_PORT_STATE);
   if (sdStateServer < 0)
@@ -421,21 +423,20 @@ void Ros_Controller_ConnectionServer_Start(Controller* controller)
       memset(&clientSockAddr, 0, sizeof(clientSockAddr));
       sizeofSockAddr = sizeof(clientSockAddr);
 
-      // Check motion server
-      if (FD_ISSET(sdMotionServer, &fds))
-      {
-        sdAccepted = mpAccept(sdMotionServer, (struct sockaddr *)&clientSockAddr, &sizeofSockAddr);
-        if (sdAccepted < 0)
-          break;
-
-        s = setsockopt(sdAccepted, IPPROTO_TCP, TCP_NODELAY, (char*)&useNoDelay, sizeof(int));
-        if (OK != s)
-        {
-          printf("Failed to set TCP_NODELAY.\r\n");
-        }
-		Db_Print("[Controller] start motion server.\r\n"); // #TODO remove
-        Ros_MotionServer_StartNewConnection(controller, sdAccepted);
-      }
+      // Check motion server -> DEPRECATED. Use RealTimeMotionServer instead
+    //   if (FD_ISSET(sdMotionServer, &fds))
+    //   {
+    //     sdAccepted = mpAccept(sdMotionServer, (struct sockaddr *)&clientSockAddr, &sizeofSockAddr);
+    //     if (sdAccepted < 0)
+    //       break;
+    //     s = setsockopt(sdAccepted, IPPROTO_TCP, TCP_NODELAY, (char*)&useNoDelay, sizeof(int));
+    //     if (OK != s)
+    //     {
+    //       printf("Failed to set TCP_NODELAY.\r\n");
+    //     }
+	// 	Db_Print("[Controller] start motion server.\r\n"); // #TODO remove
+    //     Ros_MotionServer_StartNewConnection(controller, sdAccepted);
+    //   }
 
       // Check state server
       if (FD_ISSET(sdStateServer, &fds))

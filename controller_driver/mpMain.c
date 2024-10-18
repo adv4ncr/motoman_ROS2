@@ -43,7 +43,7 @@
 
 
 #ifdef DEBUG
-	#warning Debug messages in MotoPlus *will* affect application performance (disable this in SimpleMessage.h)
+	#warning Debug messages in MotoPlus *will* affect application performance (disable this in SimpleMessageDefinition.h)
 #endif
 
 //GLOBAL DATA DEFINITIONS

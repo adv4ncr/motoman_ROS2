@@ -183,7 +183,7 @@
     <ClCompile Include="MotionServer.c" />
     <ClCompile Include="mpMain.c" />
     <ClCompile Include="RealTimeMotionServer.c" />
-    <ClCompile Include="SimpleMessage.c" />
+    <ClCompile Include="SimpleMessageFunctions.c" />
     <ClCompile Include="StateServer.c" />
   </ItemGroup>
   <ItemGroup>
@@ -195,7 +195,8 @@
     <ClInclude Include="ParameterExtraction.h" />
     <ClInclude Include="ParameterTypes.h" />
     <ClInclude Include="RealTimeMotionServer.h" />
-    <ClInclude Include="SimpleMessage.h" />
+    <ClInclude Include="SimpleMessageFunctions.h" />
+    <ClInclude Include="SimpleMessageDefinition.h" />
     <ClInclude Include="StateServer.h" />
     <ClInclude Include="udp_rt_protocol.h" />
   </ItemGroup>
