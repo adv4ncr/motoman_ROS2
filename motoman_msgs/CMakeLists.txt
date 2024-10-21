@@ -14,6 +14,7 @@ set(msg_files
 )
 
 set(srv_files
+  "srv/WriteIOBit.srv"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
