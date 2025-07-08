@@ -5,6 +5,22 @@ Experimental [ros2_control](https://github.com/ros-controls/ros2_control) integr
 Based on https://github.com/tingelst/motoman .  
 Use `MotoPlus for Visual Studio` or `MotoPlusIDE` to compile the controller code.
 
+# Dependencies
+Minimum dependencies to build the stack:
+```
+ros-<version>-ament-cmake
+ros-<version>-xacro
+ros-<version>-ros2-control
+ros-<version>-joint-state-broadcaster
+ros-<version>-moveit-msgs
+```
+
+Install all dependencies via `rosdep install --from-paths src --ignore-src -r -y` (including moveit).
+
+# Build
+To build the entire stack, simply run `colcon build` in the root folder of the workspace.  
+To skip the moveit packages, run `colcon build --packages-ignore motoman_hc10_moveit_config motoman_hc10_moveit_servo`
+
 # Available State Interfaces
 ## Nomenclature: 
 - `Robot controller` - the hardware robot controller (e.g. YRC1000)

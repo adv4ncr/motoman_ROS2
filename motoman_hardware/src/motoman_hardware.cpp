@@ -23,7 +23,7 @@ MotomanHardware::MotomanHardware() :
 void MotomanHardware::shutdown_helper()
 {
     RCLCPP_WARN(logger, "shutdown helper");
-    MotomanHardware::on_shutdown(this->get_state());
+    MotomanHardware::on_shutdown(this->get_lifecycle_state());
 }
 
 hardware_interface::CallbackReturn MotomanHardware::on_init(const hardware_interface::HardwareInfo &info)
@@ -421,7 +421,7 @@ hardware_interface::CallbackReturn MotomanHardware::on_activate(const rclcpp_lif
 
 hardware_interface::CallbackReturn MotomanHardware::on_shutdown(const rclcpp_lifecycle::State & /* previous_state */)
 {
-    if(!_is_deactivated) {MotomanHardware::on_deactivate(this->get_state());}
+    if(!_is_deactivated) {MotomanHardware::on_deactivate(this->get_lifecycle_state());}
 
     RCLCPP_WARN(logger, "Shutdown Hardware Interface ...");
     return hardware_interface::CallbackReturn::SUCCESS;
@@ -685,8 +685,8 @@ void MotomanHardware::set_robot_status_thread(THREAD_STATE state)
 	switch (state) {
 	case THREAD_STATE::START:
     {
-        ros_status_executor_ptr = std::make_shared<rclcpp::executors::StaticSingleThreadedExecutor>();
-        std::weak_ptr<rclcpp::executors::StaticSingleThreadedExecutor> weak_obj(ros_status_executor_ptr);
+        ros_status_executor_ptr = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+        std::weak_ptr<rclcpp::executors::SingleThreadedExecutor> weak_obj(ros_status_executor_ptr);
         run_robot_status_node.store(true);
 
 		if (!robot_status_thread_ptr) {

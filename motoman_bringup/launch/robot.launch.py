@@ -169,12 +169,7 @@ def generate_launch_description():
         executable="spawner",
         arguments=["motion_control_handle", "--inactive", "-c", "/controller_manager"],
     )
-    
-    robot_capture_handle_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["robot_capture_handle", "-c", "/controller_manager"],
-    )
+
 
     static_test_handle_spawner = Node(
         package="controller_manager",
@@ -189,7 +184,6 @@ def generate_launch_description():
         robot_state_publisher_node,
         joint_state_broadcaster_spawner,
         static_test_handle_spawner,
-        robot_capture_handle_spawner,
         # delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
         rviz_node,
     ]

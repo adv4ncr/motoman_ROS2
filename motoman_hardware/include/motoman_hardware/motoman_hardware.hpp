@@ -199,7 +199,7 @@ private:
     // Status message node thread
     std::unique_ptr<std::thread> robot_status_thread_ptr;
     std::atomic_bool run_robot_status_node;
-    std::shared_ptr<rclcpp::executors::StaticSingleThreadedExecutor> ros_status_executor_ptr;
+    std::shared_ptr<rclcpp::executors::SingleThreadedExecutor> ros_status_executor_ptr;
 };
 
 

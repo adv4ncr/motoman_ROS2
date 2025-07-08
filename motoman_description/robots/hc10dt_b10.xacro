@@ -18,7 +18,7 @@
     robot_ip="$(arg robot_ip)"
     axis_increment_factor="$(arg axis_increment_factor)"
     axis_acceleration_factor="$(arg axis_acceleration_factor)"
-    use_mock_hardware="$(arg use_mock_hardware)"
+    mock_hardware="$(arg use_mock_hardware)"
     sim_gazebo="$(arg sim_gazebo)"
   />
 
