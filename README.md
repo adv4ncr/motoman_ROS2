@@ -25,9 +25,9 @@ To skip the moveit packages, run `colcon build --packages-ignore motoman_hc10_mo
 ### Nomenclature: 
 - `Robot controller` - the hardware robot controller (e.g. YRC1000)
 ### State Interfaces
-- `<state_interface name="position">` - joint position sent to the robot controller. Since the robot is a commanded system (as opposed to a controlled system), the last command sent is used as the position state. This works well in practice with the disadvantage that the inherent dead time of >= 40 ms is not reflected in the state. Use the `fdb` interface for this.
-- `<state_interface name="pos_set">` - joint position set on the robot controller
-- `<state_interface name="pos_cmd">` - joint position commanded to the robot controller (same as the "position" interface, just reflected from the robot controller) 
+- `<state_interface name="position">` - joint position set on the robot controller. Since the robot is a commanded system (as opposed to a controlled system), the last command sent is used as the position state. This works well in practice with the disadvantage that the inherent dead time of >= 40 ms is not reflected in the state. Use the `fdb` interface for this.
+- `<state_interface name="pos_snd">` - joint position sent to the robot controller
+- `<state_interface name="pos_cmd">` - joint position commanded to the robot controller (same as the "position" interface, just reflected from the robot controller)
 - `<state_interface name="pos_fdb">` - real joint position measured by the robot controller
 - `<state_interface name="vel_cmd">` - joint velocity commanded to the robot controller
 - `<state_interface name="velocity">` - joint velocity set on the robot controller
